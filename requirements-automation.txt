@@ -1,0 +1,10 @@
+pillow
+opencv-python
+numpy
+tqdm
+pyyaml
+pymupdf
+reportlab
+scikit-image
+gdown
+rich

@@ -1,0 +1,6 @@
+app_title: Manga Auto Colorizer
+app_subtitle: Local black-and-white manga auto colorization tool
+default_input_type: pages
+show_logs_tail_lines: 200
+preview_max_images: 24
+final_pdf_name: chapter_colorized.pdf

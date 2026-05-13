@@ -1,0 +1,17 @@
+# FUTURE_IDEAS
+
+当前版本不做以下内容：
+
+- reference 模式
+- MangaNinjia 接入
+- ComfyUI_MangaNinjia 接入
+- 参考图驱动的颜色一致性流程
+
+## 未来方向
+
+后续如果要升级，可以再评估：
+
+- 角色参考图约束上色
+- 跨页角色颜色一致性
+- 更复杂的 ComfyUI 工作流
+- 批量章节管理和任务队列

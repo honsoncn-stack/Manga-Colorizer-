@@ -1,0 +1,16 @@
+project_name: manga-auto-colorizer
+app_name: Manga Auto Colorizer
+project_root: D:\AIProjects\manga-auto-colorizer
+conda_env_path: D:\CondaEnvs\manga-color-v2
+python_path: D:\CondaEnvs\manga-color-v2\python.exe
+default_mode: auto
+device: auto
+input_pages_dir: input/pages_bw
+input_pdf_dir: input/pdf
+output_dir: output
+models_dir: models
+manga_colorization_v2_dir: external/manga-colorization-v2
+max_retry: 2
+export_pdf: true
+preserve_ink_lines: true
+quality_check: true
