@@ -2,14 +2,17 @@
   "name": "manga-auto-colorizer-desktop",
   "version": "0.1.0",
   "private": true,
+  "productName": "Manga Auto Colorizer",
+  "appId": "com.local.mangaautocolorizer",
   "description": "Electron desktop shell for Manga Auto Colorizer",
   "main": "electron/main.js",
   "scripts": {
     "dev": "concurrently -k \"npm --prefix frontend run dev\" \"wait-on tcp:5173 && cross-env ELECTRON_START_URL=http://localhost:5173 electron .\"",
     "start": "electron .",
-    "build": "npm --prefix frontend run build",
-    "pack": "npm run build && electron-builder --dir",
-    "dist": "npm run build && electron-builder"
+    "build": "npm run build:frontend",
+    "build:frontend": "npm --prefix frontend run build",
+    "pack": "npm run build:frontend && electron-builder --dir",
+    "dist": "npm run build:frontend && electron-builder"
   },
   "devDependencies": {
     "concurrently": "^9.1.2",
@@ -19,15 +22,17 @@
     "wait-on": "^8.0.3"
   },
   "build": {
-    "appId": "local.mangacolorizer.desktop",
     "productName": "Manga Auto Colorizer",
+    "appId": "com.local.mangaautocolorizer",
+    "asar": false,
     "directories": {
       "output": "release"
     },
+    "icon": "build/icon.ico",
     "files": [
       "electron/**/*",
       "frontend/dist/**/*",
-      "backend/**/*",
+      "backend/server.py",
       "package.json"
     ],
     "extraMetadata": {
@@ -35,8 +40,17 @@
     },
     "win": {
       "target": [
-        "nsis"
+        "nsis",
+        "portable"
       ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Manga Auto Colorizer",
+      "uninstallDisplayName": "Manga Auto Colorizer"
     }
   }
 }

@@ -13,6 +13,8 @@ desktop/release/
 dist/
 build/
 release/
+*.exe
+*.msi
 *.spec
 *.log
 *.pth

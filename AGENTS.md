@@ -1,106 +1,59 @@
 # AGENTS.md
 
-## 固定环境
+## Environment
 
-1. 用户使用的是 Windows Codex App，不是 Codex CLI。
-2. 不要使用 `codex` 命令。
-3. 项目根目录固定为 `D:\AIProjects\manga-auto-colorizer`。
-4. Conda 环境固定为 `D:\CondaEnvs\manga-color-v2`。
-5. Python 固定为 `D:\CondaEnvs\manga-color-v2\python.exe`。
+1. The user works in Windows Codex App, not Codex CLI.
+2. Do not use the `codex` command.
+3. Project root: `D:\AIProjects\manga-auto-colorizer`
+4. Conda env: `D:\CondaEnvs\manga-color-v2`
+5. Python: `D:\CondaEnvs\manga-color-v2\python.exe`
 
-## 项目主线
+## Project scope
 
-1. 当前主线是 Electron 桌面应用。
-2. UI 风格固定为日漫漫画工作台风。
-3. 不要删除 Streamlit 旧入口，但不要继续作为主线。
-4. 新代码放在 `desktop/`。
-5. 后端用 `desktop/backend/server.py`。
-6. 前端用 `desktop/frontend/`。
+1. Current mainline is the Electron desktop app.
+2. UI style is a manga workbench, not a generic webpage.
+3. Keep the Streamlit entry, but do not promote it as the main path.
+4. New desktop code goes in `desktop/`.
+5. Backend lives in `desktop/backend/server.py`.
+6. Frontend lives in `desktop/frontend/`.
+7. Auto-only mode only.
+8. No reference mode.
+9. No MangaNinjia.
+10. No ComfyUI_MangaNinjia.
+11. No copyrighted anime/IP assets.
 
-## 范围限制
+## Path and safety rules
 
-1. 只做普通自动上色。
-2. 不做 reference 模式。
-3. 不接 MangaNinjia。
-4. 不接 ComfyUI_MangaNinjia。
-5. 不创建 `input/references`。
-6. 核心后端固定为 `external/manga-colorization-v2`。
-7. 不使用任何受版权保护的动漫素材。
+1. Use `pathlib` for Python path handling.
+2. Keep all project paths and caches on D:.
+3. Do not submit `input/`, `output/`, `models/`, `logs/`, or `reports/`.
+4. Do not submit `node_modules/`, `dist/`, `build/`, or `release/`.
+5. Do not submit model weights.
+6. Do not create `input/references`.
 
-## 开发规则
+## Development rules
 
-1. 所有 Python 路径处理必须使用 `pathlib`。
-2. 所有脚本必须支持 Windows PowerShell。
-3. 所有前后端路径必须兼容 Windows。
-4. 修改前先执行 `git status`。
-5. 修改后做最小测试。
-6. 不要伪造测试成功。
-7. 如果失败，必须读取日志、说明原因、修复后再试。
+1. Run `git status` before modifying files.
+2. Make the smallest change that solves the problem.
+3. Do not pretend a run succeeded.
+4. After changes, perform a minimal verification.
+5. If a run fails, read the logs and fix the cause.
 
-## Git 规则
+## Stage 2 rules
 
-允许提交：
+1. Frontend UI components go in `desktop/frontend/src/components`.
+2. Frontend pages go in `desktop/frontend/src/pages`.
+3. Backend API changes go in `desktop/backend/server.py`.
+4. Keep the auto-only workflow.
+5. Keep the manga workbench visual language.
+6. Use CSS/SVG/gradients/panel borders/halftone textures for styling.
 
-- `README.md`
-- `AGENTS.md`
-- `.gitignore`
-- `desktop/`
-- `app/`
-- `scripts/`
-- `configs/`
-- `docs/`
-- `skills/`
-- `requirements-automation.txt`
-- `requirements-app.txt`
+## Stage 3 rules
 
-禁止提交：
-
-- `input/`
-- `output/`
-- `models/`
-- `logs/`
-- `reports/`
-- `node_modules/`
-- `desktop/dist/`
-- `desktop/release/`
-- `dist/`
-- `build/`
-- `release/`
-- `*.pth`
-- `*.pt`
-- `*.ckpt`
-- `*.safetensors`
-- `*.onnx`
-- `*.pkl`
-
-## 运行前检查
-
-```powershell
-cd D:\AIProjects\manga-auto-colorizer
-git status
-conda activate D:\CondaEnvs\manga-color-v2
-python --version
-where.exe python
-```
-
-要求：
-
-1. 当前目录正确。
-2. `where.exe python` 第一条是 `D:\CondaEnvs\manga-color-v2\python.exe`。
-3. 当前任务仍然是 auto-only 桌面漫画上色应用。
-
-## 最小验证
-
-至少执行：
-
-```powershell
-python scripts/check_env.py
-python scripts/doctor.py
-python scripts/pipeline.py --help
-```
-
-桌面端开发至少验证：
-
-```powershell
-powershell -ExecutionPolicy Bypass -File scripts\launch_desktop_dev.ps1
-```
+1. Packaging uses Electron Builder.
+2. Do not bundle model weights, the conda environment, or large third-party runtime dependencies into the installer.
+3. Do not submit `release/`, `dist/`, `build/`, or `node_modules/`.
+4. Do not submit `input/`, `output/`, `models/`, `logs/`, or `reports/`.
+5. Desktop icons must be self-made.
+6. After generating an installer, do not auto-run it; wait for user confirmation.
+7. The main workflow remains auto-only and does not include reference mode.
