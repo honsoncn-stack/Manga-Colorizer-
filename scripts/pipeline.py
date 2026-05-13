@@ -6,11 +6,20 @@ import sys
 from datetime import datetime
 from pathlib import Path
 
+import yaml
+
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 LOG_DIR = PROJECT_ROOT / "logs"
 PIPELINE_LOG = LOG_DIR / "pipeline.log"
 ERROR_LOG = LOG_DIR / "error.log"
+CONFIG_PATH = PROJECT_ROOT / "configs" / "config.yaml"
+
+
+def load_config() -> dict:
+    if not CONFIG_PATH.exists():
+        return {}
+    return yaml.safe_load(CONFIG_PATH.read_text(encoding="utf-8")) or {}
 
 
 def emit(message: str) -> None:
@@ -32,9 +41,46 @@ def emit_error(message: str) -> None:
 
 
 def parse_args() -> argparse.Namespace:
+    config = load_config()
     parser = argparse.ArgumentParser(description="Run the auto-only manga colorization pipeline.")
     parser.add_argument("--input", required=True, help="Input directory of pages or a PDF file")
+    parser.add_argument("--model-size", type=int, default=int(config.get("default_model_size", 768)))
+    parser.add_argument(
+        "--disable-denoise",
+        action="store_true",
+        default=bool(config.get("default_disable_denoise", True)),
+        help="Disable upstream denoising for cleaner line art",
+    )
+    parser.add_argument("--denoiser-sigma", type=int, default=int(config.get("default_denoiser_sigma", 18)))
+    parser.add_argument("--line-strength", type=float, default=float(config.get("default_line_strength", 0.72)))
+    parser.add_argument("--color-saturation", type=float, default=float(config.get("default_color_saturation", 1.12)))
+    parser.add_argument("--color-contrast", type=float, default=float(config.get("default_color_contrast", 1.05)))
+    parser.add_argument("--color-brightness", type=float, default=float(config.get("default_color_brightness", 1.01)))
+    parser.add_argument("--skin-fix-strength", type=float, default=float(config.get("default_skin_fix_strength", 0.48)))
+    parser.add_argument("--blur-threshold", type=float, default=float(config.get("default_blur_threshold", 0.24)))
     return parser.parse_args()
+
+
+def clean_generated_outputs() -> None:
+    targets = [
+        PROJECT_ROOT / "output" / "pages_split",
+        PROJECT_ROOT / "output" / "preprocessed",
+        PROJECT_ROOT / "output" / "preprocessed" / "colorization",
+        PROJECT_ROOT / "output" / "colorized_raw",
+        PROJECT_ROOT / "output" / "colorized_fixed",
+        PROJECT_ROOT / "output" / "needs_review",
+        PROJECT_ROOT / "output" / "final_pdf",
+    ]
+    for directory in targets:
+        if not directory.exists():
+            continue
+        for file_path in sorted(directory.rglob("*")):
+            if file_path.is_file():
+                file_path.unlink(missing_ok=True)
+
+    quality_report = PROJECT_ROOT / "reports" / "quality_report.json"
+    if quality_report.exists():
+        quality_report.unlink(missing_ok=True)
 
 
 def run_step(name: str, command: list[str]) -> None:
@@ -76,6 +122,8 @@ def main() -> int:
         if not input_path.exists():
             raise FileNotFoundError(f"Input path not found: {input_path}")
 
+        clean_generated_outputs()
+
         if input_path.is_file() and input_path.suffix.lower() == ".pdf":
             run_step(
                 "pdf_to_pages",
@@ -108,19 +156,25 @@ def main() -> int:
                 "--enhance-lines",
             ],
         )
-        run_step(
-            "colorize_auto",
-            [
-                str(python_exe),
-                str(PROJECT_ROOT / "scripts" / "03_colorize_auto.py"),
-                "--input",
-                str(preprocessed_dir),
-                "--out",
-                str(colorized_raw_dir),
-                "--repo",
-                str(repo_dir),
-            ],
-        )
+
+        colorize_command = [
+            str(python_exe),
+            str(PROJECT_ROOT / "scripts" / "03_colorize_auto.py"),
+            "--input",
+            str(preprocessed_dir),
+            "--out",
+            str(colorized_raw_dir),
+            "--repo",
+            str(repo_dir),
+            "--size",
+            str(args.model_size),
+            "--denoiser-sigma",
+            str(args.denoiser_sigma),
+        ]
+        if args.disable_denoise:
+            colorize_command.append("--no-denoise")
+        run_step("colorize_auto", colorize_command)
+
         run_step(
             "preserve_ink_lines",
             [
@@ -133,7 +187,15 @@ def main() -> int:
                 "--out",
                 str(colorized_fixed_dir),
                 "--line-strength",
-                "0.85",
+                str(args.line_strength),
+                "--color-saturation",
+                str(args.color_saturation),
+                "--color-contrast",
+                str(args.color_contrast),
+                "--color-brightness",
+                str(args.color_brightness),
+                "--skin-fix-strength",
+                str(args.skin_fix_strength),
             ],
         )
         run_step(
@@ -149,6 +211,8 @@ def main() -> int:
                 str(quality_report_path),
                 "--needs-review",
                 str(needs_review_dir),
+                "--blur-threshold",
+                str(args.blur_threshold),
             ],
         )
         run_step(

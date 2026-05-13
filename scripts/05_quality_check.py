@@ -16,6 +16,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--reference-bw", required=True, help="Reference black-and-white directory")
     parser.add_argument("--out-report", required=True, help="Output JSON report")
     parser.add_argument("--needs-review", required=True, help="Directory for flagged files")
+    parser.add_argument("--blur-threshold", type=float, default=0.24, help="Minimum line variance ratio to pass")
     return parser.parse_args()
 
 
@@ -23,7 +24,7 @@ def laplacian_variance(image: np.ndarray) -> float:
     return float(cv2.Laplacian(image, cv2.CV_64F).var())
 
 
-def analyze_file(color_path: Path, bw_path: Path) -> tuple[dict[str, object], bool]:
+def analyze_file(color_path: Path, bw_path: Path, blur_threshold: float) -> tuple[dict[str, object], bool]:
     record: dict[str, object] = {"file": color_path.name, "issues": []}
     flagged = False
     try:
@@ -67,7 +68,7 @@ def analyze_file(color_path: Path, bw_path: Path) -> tuple[dict[str, object], bo
     bw_var = laplacian_variance(bw_gray)
     record["laplacian_variance"] = round(color_var, 2)
     record["reference_laplacian_variance"] = round(bw_var, 2)
-    if bw_var > 0 and color_var < bw_var * 0.35:
+    if bw_var > 0 and color_var < bw_var * blur_threshold:
         record["issues"].append("blurred_lines")
         flagged = True
 
@@ -100,7 +101,7 @@ def main() -> int:
 
     for color_path in input_files:
         bw_path = reference_dir / color_path.name
-        record, flagged = analyze_file(color_path, bw_path)
+        record, flagged = analyze_file(color_path, bw_path, args.blur_threshold)
         if flagged:
             shutil.copy2(color_path, review_dir / color_path.name)
         records.append(record)

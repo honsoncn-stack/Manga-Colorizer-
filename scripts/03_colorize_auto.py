@@ -16,6 +16,9 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--input", default="output/preprocessed", help="Input file or directory")
     parser.add_argument("--out", default="output/colorized_raw", help="Output directory")
     parser.add_argument("--repo", default="external/manga-colorization-v2", help="Repository directory")
+    parser.add_argument("--size", type=int, default=768, help="Inference size, must be divisible by 32")
+    parser.add_argument("--denoiser-sigma", type=int, default=18, help="Denoiser sigma when denoise is enabled")
+    parser.add_argument("--no-denoise", action="store_true", help="Disable upstream denoising step")
     return parser.parse_args()
 
 
@@ -81,7 +84,18 @@ def main() -> int:
         )
 
     started_at = time.time()
-    command = [sys.executable, str(inference_script), "-p", str(input_path)]
+    command = [
+        sys.executable,
+        str(inference_script),
+        "-p",
+        str(input_path),
+        "-s",
+        str(args.size),
+        "-ds",
+        str(args.denoiser_sigma),
+    ]
+    if args.no_denoise:
+        command.append("-nd")
     print(f"[OK] Running: {' '.join(command)}")
     result = subprocess.run(
         command,

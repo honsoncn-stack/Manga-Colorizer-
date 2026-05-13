@@ -4,6 +4,17 @@ output/
 models/
 logs/
 reports/
+node_modules/
+desktop/node_modules/
+desktop/frontend/node_modules/
+desktop/dist/
+desktop/frontend/dist/
+desktop/release/
+dist/
+build/
+release/
+*.spec
+*.log
 *.pth
 *.pt
 *.ckpt

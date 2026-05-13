@@ -1,16 +1,20 @@
 # Manga Auto Colorizer
 
-本项目是一个面向 Windows + Codex App 用户的本地黑白漫画自动上色应用。第一版只做普通自动上色，不做 reference 模式，不需要参考图，不接 MangaNinjia，不接 ComfyUI_MangaNinjia。
+本项目是一个本地黑白漫画自动上色工具，固定运行在 Windows + Codex App + D 盘环境中。当前项目保留两个入口：
 
-核心模型固定为 `external/manga-colorization-v2`，应用形态为 Streamlit 本地 Web App。所有项目文件、模型、缓存、输出都应放在 D 盘。
+1. Streamlit 旧入口
+2. Electron 桌面新入口
 
-## 项目定位
+推荐优先使用 Electron 桌面入口。
 
-- 本地黑白漫画自动上色工具
-- 只支持普通自动上色
+## 当前版本范围
+
+- 只做普通自动上色
 - 不做 reference 模式
 - 不需要参考图
-- 核心模型是 `manga-colorization-v2`
+- 不接 MangaNinjia
+- 不接 ComfyUI_MangaNinjia
+- 核心模型固定为 `external/manga-colorization-v2`
 
 ## 固定环境
 
@@ -26,7 +30,7 @@
 4. 使用 PowerShell 终端。
 5. 不要使用 `codex` 命令。
 
-## 安装依赖
+## 依赖安装
 
 ```powershell
 conda activate D:\CondaEnvs\manga-color-v2
@@ -35,21 +39,55 @@ pip install -r requirements-app.txt
 pip install -r external/manga-colorization-v2/requirements.txt
 ```
 
-## 下载权重
+## 权重下载
 
 ```powershell
 conda activate D:\CondaEnvs\manga-color-v2
 python scripts/download_weights_manga_colorization_v2.py
 ```
 
-## 检查环境
+## 环境检查
 
 ```powershell
 conda activate D:\CondaEnvs\manga-color-v2
 python scripts/check_env.py
+python scripts/doctor.py
 ```
 
-## 启动应用
+## 桌面应用版
+
+当前有两个入口：
+
+1. Streamlit 旧入口
+2. Electron 桌面新入口
+
+推荐使用 Electron 桌面入口。
+
+桌面应用代码路径：
+
+```text
+desktop/
+```
+
+桌面应用后端 API：
+
+```text
+http://127.0.0.1:8765
+```
+
+开发模式启动：
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\launch_desktop_dev.ps1
+```
+
+普通启动：
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\launch_desktop_app.ps1
+```
+
+## Streamlit 旧入口
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File scripts\launch_app.ps1
@@ -86,88 +124,48 @@ python scripts/pipeline.py --input input/pdf/chapter01.pdf
 - `output/needs_review`
 - `reports/quality_report.json`
 
-## 目录说明
-
-```text
-D:\AIProjects\manga-auto-colorizer
-├─ app
-├─ configs
-├─ docs
-├─ external
-├─ input
-│  ├─ pages_bw
-│  └─ pdf
-├─ logs
-├─ models
-│  └─ downloads
-├─ output
-│  ├─ pages_split
-│  ├─ preprocessed
-│  ├─ colorized_raw
-│  ├─ colorized_fixed
-│  ├─ final_pdf
-│  └─ needs_review
-├─ reports
-├─ scripts
-└─ skills
-```
-
 ## 常见问题
 
 ### conda 找不到
 
-确认当前 PowerShell 已正确初始化 Conda。如果 `conda activate D:\CondaEnvs\manga-color-v2` 失败，请先检查本机 Conda 安装。
-
-### Python 用成 VS Code 自带 3.14
-
-执行：
+确认 PowerShell 已初始化 Conda，并检查：
 
 ```powershell
 conda activate D:\CondaEnvs\manga-color-v2
-where.exe python
 python --version
+where.exe python
 ```
 
-应优先显示 `D:\CondaEnvs\manga-color-v2\python.exe`。
+### Python 不是目标环境
+
+`where.exe python` 的第一条应为：
+
+```text
+D:\CondaEnvs\manga-color-v2\python.exe
+```
 
 ### torch 没有 GPU
 
-本项目允许 CPU 回退。`scripts/check_env.py` 会把 CUDA 不可用标记为 `[WARN]`，不会因此直接失败。
+允许 CPU 回退。`scripts/check_env.py` 会把 CUDA 不可用标记为 `[WARN]`，不会因此直接失败。
 
 ### 权重下载失败
 
-先运行：
+先执行：
 
 ```powershell
 python scripts/download_weights_manga_colorization_v2.py
 ```
 
-如果 Google Drive 下载失败，脚本会给出手动下载说明。权重不要提交到 Git。
+如果 Google Drive 下载失败，脚本会输出手动下载说明。
 
-### PDF 拆页失败
-
-检查：
-
-- `input/pdf` 中的 PDF 是否损坏
-- `pymupdf` 是否已安装
-- `logs/error.log` 中的具体错误
-
-### 输出为空
+### 桌面端打不开
 
 优先检查：
 
-- `external/manga-colorization-v2` 是否存在
-- 权重是否已放到正确目录
+- `scripts/launch_desktop_dev.ps1`
+- `desktop/backend/logs/backend.log`
 - `logs/pipeline.log`
 - `logs/error.log`
-
-### 上色结果太灰
-
-先检查原始黑白图质量，再查看 `reports/quality_report.json` 中的饱和度告警。当前版本只做 auto-only 流程，不做参考图校色。
-
-### 线稿变糊
-
-流水线中会执行 `scripts/04_preserve_ink_lines.py`，把原始黑线叠回彩色结果，减轻线条发糊问题。
 
 ## Git 注意事项
 
@@ -178,7 +176,10 @@ python scripts/download_weights_manga_colorization_v2.py
 - `models`
 - `logs`
 - `reports`
-- 任意模型权重与压缩包
+- `node_modules`
+- `desktop/release`
+- `desktop/dist`
+- 任意模型权重
 
 ## 当前限制
 
@@ -186,4 +187,4 @@ python scripts/download_weights_manga_colorization_v2.py
 - 不创建 `input/references`
 - 不接 MangaNinjia
 - 不接 ComfyUI_MangaNinjia
-- 不提交任何模型权重
+- 核心模型只使用 `manga-colorization-v2`
