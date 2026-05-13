@@ -18,29 +18,51 @@ const zoomPresets = [
   { key: "100%", label: "100%", value: "100%" }
 ];
 
-export default function Reader({ currentBookId, readerSettings, onReaderSettingsChange, onBookLoaded, readerJobStatus, env, onOpenQueue }) {
+export default function Reader({
+  currentBookId,
+  readerSettings,
+  onReaderSettingsChange,
+  onBookLoaded,
+  readerJobStatus,
+  env,
+  restoreState,
+  onOpenLibrary,
+  onOpenQueue
+}) {
   const [manifest, setManifest] = useState(null);
   const [pageData, setPageData] = useState(null);
   const [pageInput, setPageInput] = useState("1");
   const [viewMode, setViewMode] = useState("color");
   const [busy, setBusy] = useState(false);
+  const [loadError, setLoadError] = useState("");
 
   useEffect(() => {
     async function loadBook() {
       if (!currentBookId) {
         setManifest(null);
         setPageData(null);
+        setLoadError("");
         return;
       }
+
+      setLoadError("");
       const nextManifest = await getLibraryBook(currentBookId);
+      const totalPages = Math.max(Number(nextManifest.total_pages || 1), 1);
+      const safePage = Math.min(Math.max(Number(nextManifest.current_page || 1), 1), totalPages);
+
       setManifest(nextManifest);
-      setPageInput(String(nextManifest.current_page || 1));
-      const nextPage = await getLibraryBookPage(currentBookId, nextManifest.current_page || 1);
+      setPageInput(String(safePage));
+
+      const nextPage = await getLibraryBookPage(currentBookId, safePage);
       setPageData(nextPage);
       onBookLoaded?.(nextManifest);
     }
-    loadBook().catch((error) => console.error(error));
-  }, [currentBookId, readerJobStatus?.progress]);
+
+    loadBook().catch((error) => {
+      console.error(error);
+      setLoadError(error instanceof Error ? error.message : "读取书籍失败。");
+    });
+  }, [currentBookId, readerJobStatus?.progress, onBookLoaded]);
 
   const totalPages = manifest?.total_pages || 0;
   const currentPage = pageData?.page_number || manifest?.current_page || 1;
@@ -50,6 +72,7 @@ export default function Reader({ currentBookId, readerSettings, onReaderSettings
     if (!currentBookId || !manifest) {
       return;
     }
+
     const safePage = Math.min(Math.max(pageNumber, 1), manifest.total_pages);
     await setLibraryCurrentPage(currentBookId, safePage);
     const nextPage = await getLibraryBookPage(currentBookId, safePage);
@@ -69,13 +92,35 @@ export default function Reader({ currentBookId, readerSettings, onReaderSettings
   return (
     <div className="page-stack">
       <MangaCard title="阅读器" subtitle="单页阅读、逐页上色与整本缓存。">
-        {!currentBookId || !manifest ? (
-          <div className="gallery-status-empty">还没有选中的书。先去书库页导入一本漫画，再进入阅读器。</div>
+        {restoreState?.status === "loading" ? (
+          <div className="gallery-status-empty">正在恢复最近阅读...</div>
+        ) : restoreState?.status === "empty" ? (
+          <div className="gallery-status-empty">
+            <div>书库为空，请先到 Library 导入漫画。</div>
+            <div className="button-row">
+              <ActionButton onClick={onOpenLibrary}>前往 Library</ActionButton>
+            </div>
+          </div>
+        ) : restoreState?.status === "error" ? (
+          <div className="gallery-status-empty">
+            <div>恢复最近阅读失败。</div>
+            <div>{restoreState.error || "请回到 Library 重新选择书籍。"}</div>
+            <div className="button-row">
+              <ActionButton onClick={onOpenLibrary}>打开 Library</ActionButton>
+            </div>
+          </div>
+        ) : currentBookId && !manifest && !loadError ? (
+          <div className="gallery-status-empty">正在打开书籍...</div>
+        ) : !currentBookId || !manifest ? (
+          <div className="gallery-status-empty">还没有选中的书。先去 Library 导入一本漫画，再进入阅读器。</div>
         ) : (
           <div className="reader-layout">
             <aside className="reader-sidebar">
+              {restoreState?.message ? <div className="settings-note">{restoreState.message}</div> : null}
+              {loadError ? <div className="settings-note">{loadError}</div> : null}
               <div className="reader-book-title">{manifest.title}</div>
               <div className="reader-book-meta">共 {manifest.total_pages} 页 · 已上色 {manifest.colorized_pages?.length || 0} 页</div>
+
               <div className="reader-toolbar">
                 <ActionButton variant="secondary" disabled={currentPage <= 1} onClick={() => goToPage(currentPage - 1)}>
                   上一页
@@ -84,6 +129,7 @@ export default function Reader({ currentBookId, readerSettings, onReaderSettings
                   下一页
                 </ActionButton>
               </div>
+
               <div className="field-group">
                 <label className="field-label">页码跳转</label>
                 <div className="reader-jump-row">
@@ -93,6 +139,7 @@ export default function Reader({ currentBookId, readerSettings, onReaderSettings
                   </ActionButton>
                 </div>
               </div>
+
               <div className="reader-toolbar">
                 <ActionButton variant={viewMode === "bw" ? "secondary" : "ghost"} onClick={() => setViewMode("bw")}>
                   黑白
@@ -101,6 +148,7 @@ export default function Reader({ currentBookId, readerSettings, onReaderSettings
                   彩色
                 </ActionButton>
               </div>
+
               <div className="reader-toolbar reader-toolbar-wrap">
                 {zoomPresets.map((preset) => (
                   <ActionButton
@@ -118,6 +166,7 @@ export default function Reader({ currentBookId, readerSettings, onReaderSettings
                   缩小
                 </ActionButton>
               </div>
+
               <div className="reader-toolbar reader-toolbar-wrap">
                 <ActionButton
                   variant={readerSettings.readingDirection === "ltr" ? "secondary" : "ghost"}
@@ -132,10 +181,16 @@ export default function Reader({ currentBookId, readerSettings, onReaderSettings
                   从右到左
                 </ActionButton>
               </div>
+
               <div className="reader-toolbar reader-toolbar-wrap">
-                <StatusBadge tone={pageData?.is_colorized ? "ok" : "warn"}>{pageData?.is_colorized ? "当前页已有彩色缓存" : "当前页仍为黑白页"}</StatusBadge>
-                <StatusBadge tone={env?.weightsReady ? "ok" : "missing"}>{env?.weightsReady ? "模型可用" : "模型权重缺失"}</StatusBadge>
+                <StatusBadge tone={pageData?.is_colorized ? "ok" : "warn"}>
+                  {pageData?.is_colorized ? "当前页已有彩色缓存" : "当前页仍为黑白页"}
+                </StatusBadge>
+                <StatusBadge tone={env?.weightsReady ? "ok" : "missing"}>
+                  {env?.weightsReady ? "模型可用" : "模型权重缺失"}
+                </StatusBadge>
               </div>
+
               <div className="reader-toolbar reader-toolbar-wrap">
                 <ActionButton loading={busy} disabled={!env?.weightsReady} onClick={() => runAction(() => colorizeLibraryPage(currentBookId, currentPage))}>
                   上色当前页

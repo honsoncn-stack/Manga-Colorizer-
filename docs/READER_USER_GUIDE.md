@@ -11,24 +11,25 @@
    - CBZ
 5. Click the matching import button.
 
-The book will appear on the local bookshelf.
+The book appears on the local bookshelf.
 
 ## Read pages
 
 1. In `Library`, click `继续阅读`.
 2. The `Reader` page opens the current page from the selected book.
-3. Use:
+3. If you enter `Reader` directly from the sidebar, the app automatically restores the most recently read book. If the library is empty, it prompts you to import a manga first.
+4. Use:
    - `上一页`
    - `下一页`
    - page jump input
-   - black/white toggle
+   - BW/color toggle
    - zoom controls
 
 ## Colorize the current page
 
 In `Reader`, click `上色当前页`.
 
-If model weights are missing, the button remains visible but the environment state will show that weights are missing.
+If model weights are missing, the button remains visible but the environment state shows that weights are missing.
 
 ## Colorize multiple pages
 

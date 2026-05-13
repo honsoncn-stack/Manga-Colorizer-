@@ -11,6 +11,7 @@ import Settings from "./pages/Settings";
 import About from "./pages/About";
 import ImagePreviewModal from "./components/ImagePreviewModal";
 import ConfirmDialog from "./components/ConfirmDialog";
+import { LAST_READER_BOOK_KEY, pickPreferredReaderBook } from "./lib/readerState";
 import {
   cleanOutputs,
   clearLibraryCache,
@@ -68,8 +69,10 @@ export default function App() {
   const [jobStatus, setJobStatus] = useState(null);
   const [libraryJobStatus, setLibraryJobStatus] = useState(null);
   const [libraryBooks, setLibraryBooks] = useState([]);
+  const [libraryLoaded, setLibraryLoaded] = useState(false);
   const [currentBookId, setCurrentBookId] = useState(() => window.localStorage.getItem("reader-current-book") || "");
   const [readerSettings, setReaderSettings] = useState(loadReaderSettings);
+  const [readerRestoreState, setReaderRestoreState] = useState({ status: "idle", message: "", error: "" });
   const [previewItem, setPreviewItem] = useState(null);
   const [deleteItem, setDeleteItem] = useState(null);
 
@@ -91,6 +94,7 @@ export default function App() {
     setResults(resultsData);
     setJobStatus(jobData);
     setLibraryBooks(booksData?.books || []);
+    setLibraryLoaded(true);
     setLibraryJobStatus(readerJobData || jobData?.readerJob || null);
   };
 
@@ -109,10 +113,51 @@ export default function App() {
   useEffect(() => {
     if (currentBookId) {
       window.localStorage.setItem("reader-current-book", currentBookId);
+      window.localStorage.setItem(LAST_READER_BOOK_KEY, currentBookId);
     } else {
       window.localStorage.removeItem("reader-current-book");
     }
   }, [currentBookId]);
+
+  useEffect(() => {
+    if (currentPage !== "reader") {
+      return;
+    }
+    const hasCurrentBook = currentBookId && libraryBooks.some((book) => book?.book_id === currentBookId);
+    if (hasCurrentBook) {
+      setReaderRestoreState((state) => (state.status === "loading" ? { status: "ready", message: "", error: "" } : state));
+      return;
+    }
+    if (!libraryLoaded) {
+      setReaderRestoreState({ status: "loading", message: "", error: "" });
+      return;
+    }
+    if (!libraryBooks.length) {
+      setReaderRestoreState({ status: "empty", message: "", error: "" });
+      return;
+    }
+    try {
+      const preferredBookId = window.localStorage.getItem(LAST_READER_BOOK_KEY) || "";
+      const preferredBook = pickPreferredReaderBook(libraryBooks, preferredBookId);
+      if (!preferredBook?.book_id) {
+        setReaderRestoreState({ status: "empty", message: "", error: "" });
+        return;
+      }
+      setCurrentBookId(preferredBook.book_id);
+      setReaderRestoreState({
+        status: "ready",
+        message: `已恢复最近阅读：${preferredBook.title}`,
+        error: ""
+      });
+    } catch (error) {
+      console.error(error);
+      setReaderRestoreState({
+        status: "error",
+        message: "",
+        error: error instanceof Error ? error.message : "恢复最近阅读失败。"
+      });
+    }
+  }, [currentPage, currentBookId, libraryBooks, libraryLoaded]);
 
   const refreshEnv = async () => {
     await loadAll();
@@ -122,6 +167,7 @@ export default function App() {
     if (!bookId) {
       return;
     }
+    setReaderRestoreState({ status: "ready", message: "", error: "" });
     setCurrentBookId(bookId);
     setCurrentPage("reader");
   };
@@ -193,12 +239,14 @@ export default function App() {
         readerSettings={readerSettings}
         readerJobStatus={libraryJobStatus}
         env={env}
+        restoreState={readerRestoreState}
         onReaderSettingsChange={setReaderSettings}
         onBookLoaded={(manifest) => {
           if (manifest?.book_id) {
             setCurrentBookId(manifest.book_id);
           }
         }}
+        onOpenLibrary={() => setCurrentPage("library")}
         onOpenQueue={() => setCurrentPage("queue")}
       />
     );
