@@ -1,37 +1,104 @@
 import ActionButton from "../components/ActionButton";
 import MangaCard from "../components/MangaCard";
+import PathField from "../components/PathField";
+import StatusBadge from "../components/StatusBadge";
 import { projectPaths } from "../lib/paths";
 
-export default function Settings({ env, onCleanOutputs, onRefreshEnv }) {
+export default function Settings({
+  env,
+  projectStatus,
+  readerSettings,
+  onReaderSettingsChange,
+  onCleanOutputs,
+  onRefreshEnv,
+  onOpenProjectFolder,
+  onOpenLibraryFolder,
+  onClearLibraryCache
+}) {
   return (
     <div className="page-stack">
-      <MangaCard title="项目路径">
-        <ul className="info-list">
-          <li>项目路径：{projectPaths.projectRoot}</li>
-          <li>Python：{projectPaths.pythonPath}</li>
-          <li>input/pages_bw：{projectPaths.inputPages}</li>
-          <li>input/pdf：{projectPaths.inputPdf}</li>
-          <li>output/colorized_fixed：{projectPaths.outputFixed}</li>
-          <li>output/final_pdf：{projectPaths.outputFinalPdf}</li>
-        </ul>
-      </MangaCard>
-
-      <MangaCard title="维护操作">
-        <div className="button-row">
-          <ActionButton tone="warning" onClick={onCleanOutputs}>清理输出</ActionButton>
-          <ActionButton tone="cyan" onClick={onRefreshEnv}>环境检查</ActionButton>
+      <MangaCard title="工作台设置" subtitle="项目路径、书库路径与阅读器偏好。">
+        <div className="settings-grid">
+          <PathField label="项目根目录" value={projectPaths.projectRoot} readOnly compact />
+          <PathField label="Python 路径" value={projectPaths.pythonPath} readOnly compact />
+          <PathField label="Library Path" value={projectStatus?.libraryDir || projectPaths.libraryRoot} readOnly compact />
+          <PathField label="Input Pages Dir" value={projectStatus?.inputPagesDir || projectPaths.inputPages} readOnly compact />
+          <PathField label="Input PDF Dir" value={projectStatus?.inputPdfDir || projectPaths.inputPdf} readOnly compact />
+          <PathField label="Output Dir" value={projectStatus?.outputDir || projectPaths.outputRoot} readOnly compact />
+          <PathField label="Final PDF Dir" value={projectStatus?.outputFinalPdfDir || projectPaths.outputFinalPdf} readOnly compact />
+          <PathField label="Logs Dir" value={projectStatus?.logsDir || projectPaths.logsDir} readOnly compact />
         </div>
       </MangaCard>
 
-      <MangaCard title="环境明细">
-        <ul className="info-list">
-          <li>目标 Python：{env?.pythonPath || "-"}</li>
-          <li>仓库：{env?.repoExists ? "存在" : "缺失"}</li>
-          <li>inference.py：{env?.inferenceExists ? "存在" : "缺失"}</li>
-          <li>权重：{env?.weightsReady ? "已就绪" : "缺失"}</li>
-          <li>CUDA：{env?.cudaAvailable ? "可用" : "不可用"}</li>
-        </ul>
-      </MangaCard>
+      <div className="two-column-grid">
+        <MangaCard title="阅读偏好" subtitle="这些设置保存在桌面端本地。">
+          <div className="field-group">
+            <label className="field-label">阅读方向</label>
+            <div className="button-row">
+              <ActionButton
+                variant={readerSettings.readingDirection === "ltr" ? "secondary" : "ghost"}
+                onClick={() => onReaderSettingsChange({ ...readerSettings, readingDirection: "ltr" })}
+              >
+                从左到右
+              </ActionButton>
+              <ActionButton
+                variant={readerSettings.readingDirection === "rtl" ? "secondary" : "ghost"}
+                onClick={() => onReaderSettingsChange({ ...readerSettings, readingDirection: "rtl" })}
+              >
+                从右到左
+              </ActionButton>
+            </div>
+          </div>
+          <div className="field-group">
+            <label className="field-label">默认缩放</label>
+            <div className="button-row">
+              {["fit-width", "fit-height", "100%"].map((zoomValue) => (
+                <ActionButton
+                  key={zoomValue}
+                  variant={readerSettings.defaultZoom === zoomValue ? "secondary" : "ghost"}
+                  onClick={() => onReaderSettingsChange({ ...readerSettings, defaultZoom: zoomValue })}
+                >
+                  {zoomValue}
+                </ActionButton>
+              ))}
+            </div>
+          </div>
+          <div className="field-group">
+            <label className="field-label">自动预取后续页</label>
+            <div className="button-row">
+              <ActionButton
+                variant={readerSettings.autoPrefetchNextPages ? "secondary" : "ghost"}
+                onClick={() => onReaderSettingsChange({ ...readerSettings, autoPrefetchNextPages: !readerSettings.autoPrefetchNextPages })}
+              >
+                {readerSettings.autoPrefetchNextPages ? "已开启" : "已关闭"}
+              </ActionButton>
+            </div>
+          </div>
+        </MangaCard>
+
+        <MangaCard title="维护操作" subtitle="环境检查、书库缓存和输出清理。">
+          <div className="button-row">
+            <ActionButton variant="secondary" hint="重新读取环境状态" onClick={onRefreshEnv}>
+              环境检查
+            </ActionButton>
+            <ActionButton variant="ghost" hint="打开项目根目录" onClick={onOpenProjectFolder}>
+              打开项目目录
+            </ActionButton>
+            <ActionButton variant="ghost" hint="打开本地书库目录" onClick={onOpenLibraryFolder}>
+              打开书库目录
+            </ActionButton>
+            <ActionButton variant="danger" hint="清理旧流水线输出" onClick={onCleanOutputs}>
+              清理输出
+            </ActionButton>
+            <ActionButton variant="danger" hint="清理阅读器彩色缓存和导出 PDF" onClick={onClearLibraryCache}>
+              清理阅读器缓存
+            </ActionButton>
+          </div>
+          <div className="settings-note">
+            <StatusBadge tone={env?.weightsReady ? "ok" : "missing"}>{env?.weightsReady ? "模型权重已就绪" : "模型权重缺失"}</StatusBadge>
+          </div>
+        </MangaCard>
+      </div>
     </div>
   );
 }

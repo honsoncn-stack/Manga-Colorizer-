@@ -1,96 +1,114 @@
 # Manga Auto Colorizer
 
-本项目是一个 Windows 本地黑白漫画自动上色应用。当前主线是 **Electron + React + Vite + FastAPI** 的桌面版，核心模型只使用 `external/manga-colorization-v2`。
+`Manga Auto Colorizer` is a Windows local desktop app for black-and-white manga auto colorization and reader-mode browsing. The current mainline is `Electron + React + Vite + FastAPI`, and the color model remains `external/manga-colorization-v2`.
 
-## 当前范围
+## Current scope
 
-- 只做普通自动上色
-- 不做 reference 模式
-- 不接 MangaNinjia
-- 不接 ComfyUI_MangaNinjia
-- 不创建 `input/references`
+- Auto-only colorization
+- Local reader mode
+- Local inputs only: image folders, PDF, CBZ
+- No reference mode
+- No MangaNinjia
+- No ComfyUI_MangaNinjia
+- No browser extension
+- No cloud upload
 
-## 桌面应用版
+## Environment
 
-推荐使用桌面应用入口：
+- Project root: `D:\AIProjects\manga-auto-colorizer`
+- Conda env: `D:\CondaEnvs\manga-color-v2`
+- Python: `D:\CondaEnvs\manga-color-v2\python.exe`
 
-- 代码目录：`desktop/`
-- 后端 API：`http://127.0.0.1:8765`
-- 启动开发模式：
+## Desktop app
+
+Recommended entry:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File scripts\launch_desktop_dev.ps1
 ```
 
-- 普通启动：
+Packaged app entry:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File scripts\launch_desktop_app.ps1
+powershell -ExecutionPolicy Bypass -File scripts\launch_packaged_app.ps1
 ```
 
-### 桌面应用结构
+Desktop app structure:
 
-- `desktop/electron/` - Electron 主进程和 preload
-- `desktop/frontend/` - React + Vite 前端
-- `desktop/backend/` - FastAPI 后端
+- `desktop/electron/` - Electron main process and preload bridge
+- `desktop/frontend/` - React + Vite UI
+- `desktop/backend/` - FastAPI backend
 
-### 主要页面
+## Reader mode
 
-- Dashboard
-- Colorize
-- Gallery
-- Logs
-- Settings
+Reader mode turns the app into a local manga bookshelf and reader instead of a browser-dependent plugin.
 
-### 主要功能
+- Import image folders
+- Import PDF
+- Import CBZ
+- Read black-and-white pages locally
+- Colorize the current page, next 5 pages, or the whole book
+- Export mixed color/BW PDF per imported book
 
-- auto-only 上色
-- 拖放输入
-- 图片库预览
-- 日志刷新
-- 任务进度反馈
-- 输出目录快速打开
+### Library storage
 
-## Streamlit 旧入口
+- Library root: `library/`
+- Book storage: `library/books/`
+- Library index: `library/library_index.json`
 
-Streamlit 入口仍然保留，但不作为主线。
+User-imported books and generated book caches are not committed to Git.
 
-```powershell
-conda activate D:\CondaEnvs\manga-color-v2
-python -m streamlit run app\streamlit_app.py
-```
+## Reader mode workflow
 
-## 环境
+1. Open the desktop app.
+2. Go to `Library`.
+3. Import a local image folder, PDF, or CBZ.
+4. Open the imported book in `Reader`.
+5. Colorize the current page or a page range.
+6. Export `colorized_book.pdf` from the book's `export/` folder.
 
-- 项目根目录：`D:\AIProjects\manga-auto-colorizer`
-- Conda 环境：`D:\CondaEnvs\manga-color-v2`
-- Python：`D:\CondaEnvs\manga-color-v2\python.exe`
+## CLI utilities
 
-## 安装依赖
+Import a folder into the local library:
 
 ```powershell
 conda activate D:\CondaEnvs\manga-color-v2
-pip install -r requirements-automation.txt
-pip install -r requirements-app.txt
-pip install -r external/manga-colorization-v2/requirements.txt
+python scripts/library_manager.py import-folder --input input/pages_bw --title "Demo Book"
 ```
 
-## 权重下载
+Import a PDF:
 
 ```powershell
-conda activate D:\CondaEnvs\manga-color-v2
-python scripts/download_weights_manga_colorization_v2.py
+python scripts/library_manager.py import-pdf --input input/pdf/chapter01.pdf --title "Demo PDF"
 ```
 
-## 环境检查
+Import a CBZ:
 
 ```powershell
-conda activate D:\CondaEnvs\manga-color-v2
-python scripts/check_env.py
-python scripts/doctor.py
+python scripts/library_manager.py import-cbz --input input/cbz/demo.cbz --title "Demo CBZ"
 ```
 
-## 命令行上色
+Colorize one page from a book:
+
+```powershell
+python scripts/colorize_book_page.py --book-id book_001 --page 1
+```
+
+Colorize a range:
+
+```powershell
+python scripts/colorize_book_batch.py --book-id book_001 --start-page 3 --end-page 8
+```
+
+Export a reader book PDF:
+
+```powershell
+python scripts/export_book_pdf.py --book-id book_001
+```
+
+## Legacy pipeline mode
+
+The original pipeline is still available for folder/PDF batch colorization:
 
 ```powershell
 conda activate D:\CondaEnvs\manga-color-v2
@@ -98,52 +116,72 @@ python scripts/pipeline.py --input input/pages_bw
 python scripts/pipeline.py --input input/pdf/chapter01.pdf
 ```
 
-## 输出位置
+## Phase 2: art and interaction
 
-- `output/colorized_raw`
-- `output/colorized_fixed`
-- `output/final_pdf`
-- `output/needs_review`
-- `reports/quality_report.json`
+The desktop UI now includes:
 
-## Git 注意事项
+- Dashboard
+- Library
+- Reader
+- Colorize Queue
+- Gallery
+- Logs
+- Settings
+- About
 
-- 不要提交 `input/`
-- 不要提交 `output/`
-- 不要提交 `models/`
-- 不要提交 `logs/`
-- 不要提交 `reports/`
-- 不要提交任何模型权重
+Features already in the desktop UI:
 
-## 阶段 3：安装器 + 发布
+- Reader bookshelf
+- Drag-and-pick local imports
+- Progress feedback
+- Reader queue log
+- Image preview
+- Output gallery
 
-当前阶段使用 Electron Builder 打包 Windows 本地桌面应用。
+## Phase 3: packaging and release
 
-### 打包命令
+Build installer and portable package:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File scripts\build_desktop_installer.ps1
 ```
 
-### 创建桌面快捷方式
+Create desktop shortcut:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File scripts\create_desktop_shortcut.ps1
 ```
 
-### 打包输出目录
+Build output directory:
 
 - `desktop/release/`
 
-### 启动方式
+Notes:
 
-- 双击 portable exe
-- 或安装 Setup exe
-- 或运行 `scripts\launch_packaged_app.ps1`
+- The installer does not bundle model weights.
+- The installer does not bundle the conda environment.
+- The packaged app still depends on `D:\AIProjects\manga-auto-colorizer`.
+- The packaged app still depends on `D:\CondaEnvs\manga-color-v2`.
 
-### 说明
+## Documents
 
-- 第一版安装包不包含模型权重。
-- 第一版安装包不包含 conda 环境。
-- 应用仍依赖固定的 `D:\AIProjects\manga-auto-colorizer` 和 `D:\CondaEnvs\manga-color-v2`。
-- 这是个人本地应用发布方式，不是云端分发方案。
+- `docs/READER_MODE_PLAN.md`
+- `docs/READER_USER_GUIDE.md`
+- `docs/PACKAGING_DESKTOP.md`
+- `docs/RELEASE_CHECKLIST.md`
+
+## Git rules
+
+Do not commit:
+
+- `library/books/`
+- `library/library_index.json`
+- `input/`
+- `output/`
+- `models/`
+- `logs/`
+- `reports/`
+- `node_modules/`
+- `dist/`
+- `release/`
+- model weights

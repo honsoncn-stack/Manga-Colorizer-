@@ -1,16 +1,47 @@
+import { useState } from "react";
 import ActionButton from "../components/ActionButton";
 import LogPanel from "../components/LogPanel";
 import MangaCard from "../components/MangaCard";
 
+const tabs = [
+  { key: "pipeline", label: "Pipeline Log" },
+  { key: "error", label: "Error Log" },
+  { key: "backend", label: "Backend Log" },
+  { key: "reader", label: "Reader Log" }
+];
+
 export default function Logs({ logs, onRefresh }) {
+  const [activeTab, setActiveTab] = useState("pipeline");
+  const logContent =
+    activeTab === "pipeline"
+      ? logs?.pipelineLog
+      : activeTab === "error"
+        ? logs?.errorLog
+        : activeTab === "backend"
+          ? logs?.backendLog
+          : logs?.readerLog;
+
+  const emptyText = activeTab === "error" ? "没有错误记录。" : "暂无日志。";
+
   return (
     <div className="page-stack">
-      <MangaCard title="任务情报板" extra={<ActionButton tone="ghost" onClick={onRefresh}>刷新日志</ActionButton>}>
-        <div className="logs-grid">
-          <LogPanel title="pipeline.log" content={logs?.pipelineLog} />
-          <LogPanel title="error.log" content={logs?.errorLog} emptyText="错误日志为空，状态正常。" />
-          <LogPanel title="backend.log" content={logs?.backendLog} />
+      <MangaCard
+        title="任务日志"
+        subtitle="流水线、阅读器与后端日志都集中在这里。"
+        actions={
+          <ActionButton variant="ghost" hint="重新读取日志" onClick={onRefresh}>
+            刷新
+          </ActionButton>
+        }
+      >
+        <div className="tab-row">
+          {tabs.map((tab) => (
+            <button key={tab.key} type="button" className={`tab-pill ${activeTab === tab.key ? "is-active" : ""}`} onClick={() => setActiveTab(tab.key)}>
+              {tab.label}
+            </button>
+          ))}
         </div>
+        <LogPanel title={tabs.find((tab) => tab.key === activeTab)?.label || "日志"} content={logContent} emptyText={emptyText} />
       </MangaCard>
     </div>
   );

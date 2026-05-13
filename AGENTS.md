@@ -57,3 +57,13 @@
 5. Desktop icons must be self-made.
 6. After generating an installer, do not auto-run it; wait for user confirmation.
 7. The main workflow remains auto-only and does not include reference mode.
+
+## Reader mode rules
+
+1. The new mainline includes local reader mode.
+2. Do not build a browser extension for this project.
+3. Reader input comes only from local files.
+4. Supported reader inputs are image folders, PDF, and CBZ.
+5. Do not add CBR in the current version.
+6. Imported library content under `library/books/` is local-only and must not be committed.
+7. Keep the workflow auto-only and do not add reference mode.

@@ -97,7 +97,6 @@ function startBackend() {
   if (backendProcess) {
     return backendProcess;
   }
-
   const desktopRoot = getDesktopRoot();
   const serverPath = getServerPath();
   const env = { ...process.env, ...BACKEND_ENV };
@@ -113,11 +112,9 @@ function startBackend() {
     appendLaunchLog(`Backend exited code=${code} signal=${signal}`);
     backendProcess = null;
   });
-
   backendProcess.on("error", (error) => {
     appendLaunchLog(`Backend launch error: ${error.message}`);
   });
-
   return backendProcess;
 }
 
@@ -230,7 +227,6 @@ function createSplashWindow(message) {
       </html>
     `)}`
   );
-
   return window;
 }
 
@@ -254,11 +250,9 @@ function createMainWindow() {
   window.webContents.on("console-message", (_event, level, message, line, sourceId) => {
     appendRendererLog(`console[level=${level}] ${message} @ ${sourceId}:${line}`);
   });
-
   window.webContents.on("did-start-loading", () => {
     appendRendererLog("did-start-loading");
   });
-
   window.webContents.on("did-finish-load", () => {
     appendRendererLog(`did-finish-load url=${window.webContents.getURL()}`);
     if (!window.isVisible()) {
@@ -269,39 +263,30 @@ function createMainWindow() {
       splashWindow = null;
     }
   });
-
   window.webContents.on("did-fail-load", (_event, errorCode, errorDescription, validatedURL) => {
     appendRendererLog(`did-fail-load code=${errorCode} description=${errorDescription} url=${validatedURL}`);
   });
-
   window.webContents.on("render-process-gone", (_event, details) => {
     appendRendererLog(`render-process-gone reason=${details.reason} exitCode=${details.exitCode}`);
   });
-
   window.webContents.on("unresponsive", () => {
     appendRendererLog("renderer unresponsive");
   });
-
   window.on("closed", () => {
     mainWindow = null;
   });
-
   return window;
 }
 
 async function openTarget(targetPath) {
   const resolved = resolveWithinProject(targetPath);
-  const stat = await fs.promises.stat(resolved);
-  if (stat.isDirectory()) {
-    return shell.openPath(resolved);
-  }
   return shell.openPath(resolved);
 }
 
 function registerIpc() {
   ipcMain.handle("manga:select-folder", async () => {
     const result = await dialog.showOpenDialog({
-      title: "Select Folder",
+      title: "选择项目内文件夹",
       properties: ["openDirectory", "dontAddToRecent"]
     });
     if (result.canceled || !result.filePaths.length) {
@@ -310,9 +295,20 @@ function registerIpc() {
     return resolveWithinProject(result.filePaths[0]);
   });
 
+  ipcMain.handle("manga:select-image-folder", async () => {
+    const result = await dialog.showOpenDialog({
+      title: "选择漫画图片文件夹",
+      properties: ["openDirectory", "dontAddToRecent"]
+    });
+    if (result.canceled || !result.filePaths.length) {
+      return null;
+    }
+    return path.resolve(result.filePaths[0]);
+  });
+
   ipcMain.handle("manga:select-pdf", async () => {
     const result = await dialog.showOpenDialog({
-      title: "Select PDF",
+      title: "选择项目内 PDF",
       properties: ["openFile", "dontAddToRecent"],
       filters: [{ name: "PDF", extensions: ["pdf"] }]
     });
@@ -322,76 +318,82 @@ function registerIpc() {
     return resolveWithinProject(result.filePaths[0]);
   });
 
+  ipcMain.handle("manga:select-pdf-file", async () => {
+    const result = await dialog.showOpenDialog({
+      title: "选择本地 PDF",
+      properties: ["openFile", "dontAddToRecent"],
+      filters: [{ name: "PDF", extensions: ["pdf"] }]
+    });
+    if (result.canceled || !result.filePaths.length) {
+      return null;
+    }
+    return path.resolve(result.filePaths[0]);
+  });
+
+  ipcMain.handle("manga:select-cbz-file", async () => {
+    const result = await dialog.showOpenDialog({
+      title: "选择本地 CBZ",
+      properties: ["openFile", "dontAddToRecent"],
+      filters: [{ name: "CBZ", extensions: ["cbz"] }]
+    });
+    if (result.canceled || !result.filePaths.length) {
+      return null;
+    }
+    return path.resolve(result.filePaths[0]);
+  });
+
   ipcMain.handle("manga:open-folder", async (_event, targetPath) => openTarget(targetPath));
   ipcMain.handle("manga:open-file", async (_event, targetPath) => openTarget(targetPath));
-  ipcMain.handle("manga:get-app-version", () => app.getVersion());
+  ipcMain.handle("manga:get-app-version", async () => app.getVersion());
 }
 
-async function createAppWindows() {
-  splashWindow = createSplashWindow("正在启动本地 Python 后端，并等待 API 就绪...");
+async function loadRenderer(window) {
+  if (app.isPackaged) {
+    const distIndex = getDistIndexPath();
+    appendRendererLog(`loadFile ${distIndex}`);
+    await window.loadFile(distIndex);
+    return;
+  }
+  const devUrl = "http://127.0.0.1:5173";
+  appendRendererLog(`loadURL ${devUrl}`);
+  await window.loadURL(devUrl);
+}
 
+async function bootstrap() {
+  splashWindow = createSplashWindow("正在启动本地后端并准备阅读器工作台。");
   try {
     await ensureBackendPortAvailable();
     startBackend();
     await waitForBackendReady();
+    mainWindow = createMainWindow();
+    await loadRenderer(mainWindow);
   } catch (error) {
-    appendLaunchLog(`Backend readiness error: ${error.message}`);
+    appendLaunchLog(`Bootstrap failed: ${error.message}`);
     if (splashWindow) {
       splashWindow.close();
       splashWindow = null;
     }
-    dialog.showErrorBox("Manga Auto Colorizer", `Backend did not start: ${error.message}`);
-    app.quit();
-    return;
-  }
-
-  mainWindow = createMainWindow();
-  const devUrl = process.env.ELECTRON_START_URL;
-  try {
-    if (devUrl) {
-      await mainWindow.loadURL(devUrl);
-    } else {
-      await mainWindow.loadFile(getDistIndexPath());
-    }
-  } catch (error) {
-    appendRendererLog(`load-error ${error.message}`);
-    if (splashWindow) {
-      splashWindow.close();
-      splashWindow = null;
-    }
-    dialog.showErrorBox("Manga Auto Colorizer", `Failed to load the desktop UI: ${error.message}`);
+    dialog.showErrorBox("Manga Auto Colorizer", `桌面应用启动失败：\n${error.message}`);
     app.quit();
   }
-}
-
-function stopBackend() {
-  if (backendProcess && !backendProcess.killed) {
-    try {
-      backendProcess.kill();
-    } catch (error) {
-      appendLaunchLog(`Backend kill error: ${error.message}`);
-    }
-  }
-  backendProcess = null;
 }
 
 app.whenReady().then(() => {
   registerIpc();
-  createAppWindows();
+  bootstrap();
+});
+
+app.on("window-all-closed", () => {
+  if (backendProcess && !backendProcess.killed) {
+    backendProcess.kill();
+  }
+  if (process.platform !== "darwin") {
+    app.quit();
+  }
 });
 
 app.on("activate", () => {
   if (BrowserWindow.getAllWindows().length === 0) {
-    createAppWindows();
-  }
-});
-
-app.on("before-quit", () => {
-  stopBackend();
-});
-
-app.on("window-all-closed", () => {
-  if (process.platform !== "darwin") {
-    app.quit();
+    bootstrap();
   }
 });

@@ -4,6 +4,8 @@ output/
 models/
 logs/
 reports/
+library/books/
+library/library_index.json
 node_modules/
 desktop/node_modules/
 desktop/frontend/node_modules/

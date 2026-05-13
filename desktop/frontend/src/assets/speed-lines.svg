@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1000" fill="none">
+  <g opacity="0.55" stroke="rgba(255,255,255,0.18)" stroke-width="2">
+    <path d="M-40 820L1680 160" />
+    <path d="M-60 920L1640 260" />
+    <path d="M-80 740L1620 40" />
+    <path d="M-40 660L1600 -20" />
+    <path d="M160 1040L1200 -40" />
+    <path d="M360 1040L1420 20" />
+    <path d="M520 1040L1560 100" />
+  </g>
+</svg>
