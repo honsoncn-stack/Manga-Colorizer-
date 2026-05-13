@@ -27,14 +27,26 @@ def collect_images(root: Path) -> dict[str, Path]:
     }
 
 
-def copy_generated_images(repo_dir: Path, before: dict[str, Path], out_dir: Path, started_at: float) -> int:
-    after = collect_images(repo_dir)
+def resolve_generated_root(input_path: Path) -> Path:
+    if input_path.is_dir():
+        return input_path / "colorization"
+    return input_path.parent
+
+
+def copy_generated_images(input_path: Path, out_dir: Path, started_at: float) -> int:
+    generated_root = resolve_generated_root(input_path)
+    if not generated_root.exists():
+        return 0
+
+    after = collect_images(generated_root)
     copied = 0
     for name, path in sorted(after.items()):
-        if name in before and before[name] == path:
-            continue
         if path.stat().st_mtime < started_at:
             continue
+        if input_path.is_file():
+            expected_name = f"{input_path.stem}_colorized.png"
+            if path.name != expected_name:
+                continue
         target = out_dir / name
         shutil.copy2(path, target)
         copied += 1
@@ -48,14 +60,26 @@ def main() -> int:
     out_dir = Path(args.out).expanduser().resolve()
     repo_dir = Path(args.repo).expanduser().resolve()
     inference_script = repo_dir / "inference.py"
+    generator_path = repo_dir / "networks" / "generator.zip"
+    extractor_path = repo_dir / "networks" / "extractor.pth"
+    denoiser_path = repo_dir / "denoising" / "models" / "net_rgb.pth"
     out_dir.mkdir(parents=True, exist_ok=True)
 
     if not input_path.exists():
         raise FileNotFoundError(f"Input path not found: {input_path}")
     if not inference_script.exists():
         raise FileNotFoundError(f"Inference script not found: {inference_script}")
+    if not generator_path.exists():
+        raise FileNotFoundError(
+            f"Missing generator weight: {generator_path}. Run scripts/download_weights_manga_colorization_v2.py first."
+        )
+    if not extractor_path.exists():
+        print(f"[WARN] Optional extractor weight not found: {extractor_path}")
+    if not denoiser_path.exists():
+        raise FileNotFoundError(
+            f"Missing denoiser weight: {denoiser_path}. Run scripts/download_weights_manga_colorization_v2.py first."
+        )
 
-    before = collect_images(repo_dir)
     started_at = time.time()
     command = [sys.executable, str(inference_script), "-p", str(input_path)]
     print(f"[OK] Running: {' '.join(command)}")
@@ -74,7 +98,7 @@ def main() -> int:
     if result.returncode != 0:
         raise RuntimeError(f"inference.py failed with exit code {result.returncode}")
 
-    copied = copy_generated_images(repo_dir, before, out_dir, started_at)
+    copied = copy_generated_images(input_path, out_dir, started_at)
 
     if copied == 0:
         raise RuntimeError("No generated images were detected after inference")

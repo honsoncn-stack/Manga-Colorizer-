@@ -4,6 +4,8 @@ import argparse
 from pathlib import Path
 
 from PIL import Image
+from reportlab.lib.utils import ImageReader
+from reportlab.pdfgen import canvas
 
 
 def parse_args() -> argparse.Namespace:
@@ -23,15 +25,16 @@ def main() -> int:
     if not images:
         raise FileNotFoundError(f"No PNG files found in: {input_dir}")
 
-    pil_images = []
-    for path in images:
-        image = Image.open(path).convert("RGB")
-        pil_images.append(image)
+    pdf = canvas.Canvas(str(out_path))
+    for image_path in images:
+        with Image.open(image_path) as image:
+            rgb = image.convert("RGB")
+            width, height = rgb.size
+            pdf.setPageSize((width, height))
+            pdf.drawImage(ImageReader(rgb), 0, 0, width=width, height=height)
+            pdf.showPage()
+    pdf.save()
 
-    first, rest = pil_images[0], pil_images[1:]
-    first.save(out_path, save_all=True, append_images=rest)
-    for image in pil_images:
-        image.close()
     print(f"[OK] Exported PDF to {out_path}")
     return 0
 

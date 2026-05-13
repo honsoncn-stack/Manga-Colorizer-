@@ -4,6 +4,7 @@ import shutil
 import sys
 import zipfile
 from pathlib import Path
+import os
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
@@ -23,9 +24,9 @@ def ensure_d_temp() -> None:
     d_temp = Path(r"D:\Temp")
     d_temp.mkdir(parents=True, exist_ok=True)
     for key in ("TEMP", "TMP"):
-        current = Path((__import__("os").environ.get(key, "")) or ".").resolve()
+        current = Path((os.environ.get(key, "")) or ".").resolve()
         if not str(current).startswith(r"D:\Temp"):
-            __import__("os").environ[key] = str(d_temp)
+            os.environ[key] = str(d_temp)
             emit("WARN", f"Temporarily set {key} to {d_temp}")
 
 
@@ -40,9 +41,8 @@ def try_import_gdown():
 
 
 def download_file(gdown_module, file_id: str, destination: Path) -> bool:
-    url = f"https://drive.google.com/uc?id={file_id}"
     try:
-        gdown_module.download(url, str(destination), quiet=False, fuzzy=True)
+        gdown_module.download(id=file_id, output=str(destination), quiet=False)
         if destination.exists() and destination.stat().st_size > 0:
             emit("OK", f"Downloaded: {destination}")
             return True
@@ -54,6 +54,11 @@ def download_file(gdown_module, file_id: str, destination: Path) -> bool:
 def install_generator(generator_path: Path) -> None:
     NETWORKS_DIR.mkdir(parents=True, exist_ok=True)
     if generator_path.suffix.lower() == ".zip":
+        # The upstream repo loads networks/generator.zip directly.
+        zip_target = NETWORKS_DIR / "generator.zip"
+        shutil.copy2(generator_path, zip_target)
+        emit("OK", f"Copied generator zip to: {zip_target}")
+
         with zipfile.ZipFile(generator_path, "r") as archive:
             archive.extractall(NETWORKS_DIR)
         emit("OK", f"Extracted generator zip into: {NETWORKS_DIR}")
@@ -66,7 +71,7 @@ def install_generator(generator_path: Path) -> None:
 
 def install_denoiser(denoiser_path: Path) -> None:
     DENOISER_DIR.mkdir(parents=True, exist_ok=True)
-    target = DENOISER_DIR / denoiser_path.name
+    target = DENOISER_DIR / "net_rgb.pth"
     shutil.copy2(denoiser_path, target)
     emit("OK", f"Copied denoiser weight to: {target}")
 
