@@ -8,6 +8,7 @@ import {
   exportLibraryPdf,
   getLibraryBook,
   getLibraryBookPage,
+  openFolder,
   setLibraryCurrentPage
 } from "../lib/api";
 
@@ -157,6 +158,9 @@ export default function Reader({ currentBookId, readerSettings, onReaderSettings
                 </ActionButton>
                 <ActionButton variant="ghost" onClick={() => runAction(() => exportLibraryPdf(currentBookId))}>
                   导出彩色 PDF
+                </ActionButton>
+                <ActionButton variant="ghost" onClick={() => openFolder(`library\\books\\${currentBookId}`)}>
+                  打开书籍目录
                 </ActionButton>
                 <ActionButton variant="ghost" onClick={onOpenQueue}>
                   查看队列
