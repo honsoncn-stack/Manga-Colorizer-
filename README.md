@@ -2,7 +2,7 @@
 
 Windows 本地漫画阅读与自动上色工具。导入本地漫画后，可以在阅读器里按页查看黑白原图和彩色结果，并导出完整 PDF。
 
-> 当前目标是先做好 1.0 免费开源初代产品：能安装、能导入、能阅读、能上色、能导出、能反馈 Bug。2.0 会基于真实用户反馈继续开发。
+> 当前仅做好 1.0 免费开源初代产品，2.0 会基于真实用户反馈继续开发。
 
 ## 普通用户怎么安装
 
@@ -38,15 +38,6 @@ https://github.com/honsoncn-stack/Manga-Colorizer-/releases
 - 本地隐私：漫画文件、彩图缓存和导出结果都保存在本机。
 - 上色模型：基于 `manga-colorization-v2`，感谢原项目开发者。
 
-## 当前不做
-
-- 不做 reference 模式。
-- 不接 MangaNinjia。
-- 不接 ComfyUI_MangaNinjia。
-- 不做浏览器插件。
-- 不上传到云端。
-- 不在源码仓库里提交用户漫画、输出图或安装包。
-- Release 用户配置包内置经授权的模型权重；Git 提交只追踪代码和文档，不追踪大体积二进制权重文件。
 
 ## 运行环境
 
@@ -161,27 +152,7 @@ library/books/<book_id>/export/colorized_book.pdf
 
 https://github.com/qweasdd/manga-colorization-v2
 
-感谢原模型开发者的工作与授权支持。本仓库的桌面阅读器、书库、队列、导出和本地产品化流程在此基础上做了集成。
-
-## 仓库不包含什么
-
-这些内容不应提交到 Git：
-
-- `library/books/`
-- `library/library_index.json`
-- `input/`
-- `output/`
-- `models/`
-- `logs/`
-- `reports/`
-- `node_modules/`
-- `dist/`
-- `build/`
-- `release/`
-- `desktop/release/`
-- `*.exe`
-- `*.msi`
-- 模型权重和模型解包文件
+感谢原模型开发者的工作。本仓库的桌面阅读器、书库、队列、导出和本地产品化流程在此基础上做了集成。
 
 ## 许可证说明
 
