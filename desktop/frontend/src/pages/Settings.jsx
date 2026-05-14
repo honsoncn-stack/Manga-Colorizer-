@@ -91,17 +91,6 @@ export default function Settings({
             </div>
           </div>
           <div className="field-group">
-            <label className="field-label">自动预取后续页</label>
-            <div className="button-row">
-              <ActionButton
-                variant={readerSettings.autoPrefetchNextPages ? "secondary" : "ghost"}
-                onClick={() => onReaderSettingsChange({ ...readerSettings, autoPrefetchNextPages: !readerSettings.autoPrefetchNextPages })}
-              >
-                {readerSettings.autoPrefetchNextPages ? "已开启" : "已关闭"}
-              </ActionButton>
-            </div>
-          </div>
-          <div className="field-group">
             <label className="field-label">滚轮翻页</label>
             <div className="button-row">
               <ActionButton

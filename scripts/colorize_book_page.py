@@ -72,6 +72,10 @@ def colorize_page(book_id: str, page_number: int) -> Path:
 
     target_page = manifest_page_path(book_id, page_number, color=True)
     target_page.parent.mkdir(parents=True, exist_ok=True)
+    if target_page.exists():
+        add_colorized_page(book_id, page_number)
+        log_reader(f"[PAGE] skip book={book_id} page={page_number} already_colorized={target_page}")
+        return target_page
 
     python_exe = Path(sys.executable).resolve()
     repo_dir = PROJECT_ROOT / "external" / "manga-colorization-v2"

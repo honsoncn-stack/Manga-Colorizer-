@@ -3,7 +3,7 @@ from __future__ import annotations
 import argparse
 
 from colorize_book_page import colorize_page
-from library_utils import load_manifest, log_reader
+from library_utils import add_colorized_page, load_manifest, log_reader, manifest_page_path
 
 
 def parse_args() -> argparse.Namespace:
@@ -26,9 +26,17 @@ def main() -> int:
 
     log_reader(f"[BATCH] start book={args.book_id} range={start_page}-{end_page}")
     success_count = 0
+    skipped_count = 0
     failure_count = 0
 
     for page_number in range(start_page, end_page + 1):
+        target_page = manifest_page_path(args.book_id, page_number, color=True)
+        if target_page.exists():
+            add_colorized_page(args.book_id, page_number)
+            skipped_count += 1
+            log_reader(f"[BATCH] skip book={args.book_id} page={page_number} already_colorized={target_page}")
+            print(f"[SKIP] page={page_number} already_colorized")
+            continue
         try:
             colorize_page(args.book_id, page_number)
             success_count += 1
@@ -39,7 +47,7 @@ def main() -> int:
             print(f"[ERROR] page={page_number} error={exc}")
 
     log_reader(
-        f"[BATCH] done book={args.book_id} range={start_page}-{end_page} success={success_count} failed={failure_count}"
+        f"[BATCH] done book={args.book_id} range={start_page}-{end_page} success={success_count} skipped={skipped_count} failed={failure_count}"
     )
     if failure_count:
         raise RuntimeError(f"Colorized {success_count} pages, failed on {failure_count} pages")

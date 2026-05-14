@@ -32,6 +32,7 @@ export default function ColorizeQueue({ readerJobStatus, logs, books = [], onRef
             <li>当前页：{readerJobStatus?.current_page || "-"}</li>
             <li>进度：{readerJobStatus?.progress ?? 0}%</li>
             <li>成功页数：{readerJobStatus?.success_count ?? 0}</li>
+            <li>跳过页数：{readerJobStatus?.skipped_count ?? 0}</li>
             <li>失败页数：{readerJobStatus?.failure_count ?? 0}</li>
           </ul>
           <div className="gallery-status-badges">

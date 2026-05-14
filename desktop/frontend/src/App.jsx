@@ -43,7 +43,6 @@ const pageMeta = {
 const DEFAULT_READER_SETTINGS = {
   readingDirection: "rtl",
   defaultZoom: "fit-height",
-  autoPrefetchNextPages: false,
   wheelPageTurn: true,
 };
 

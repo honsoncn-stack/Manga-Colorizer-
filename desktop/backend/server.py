@@ -162,6 +162,7 @@ reader_job_state: dict[str, Any] = {
     "last_error": "",
     "queue": [],
     "success_count": 0,
+    "skipped_count": 0,
     "failure_count": 0,
 }
 reader_process: subprocess.Popen[str] | None = None
@@ -308,17 +309,29 @@ def update_reader_state_from_line(line: str) -> None:
         state = clone_reader_state()
         success_count = int(state.get("success_count", 0)) + 1
         queue = [value for value in state.get("queue", []) if int(value) != page]
-        total = success_count + int(state.get("failure_count", 0)) + len(queue)
-        progress = 100 if not queue else min(95, int(((success_count + int(state.get("failure_count", 0))) / max(total, 1)) * 100))
+        done_count = success_count + int(state.get("failure_count", 0)) + int(state.get("skipped_count", 0))
+        total = done_count + len(queue)
+        progress = 100 if not queue else min(95, int((done_count / max(total, 1)) * 100))
         set_reader_state(success_count=success_count, queue=queue, progress=progress, current_page=page)
+        return
+    if "[SKIP] page=" in line:
+        page = int(line.split("page=", 1)[1].split()[0])
+        state = clone_reader_state()
+        skipped_count = int(state.get("skipped_count", 0)) + 1
+        queue = [value for value in state.get("queue", []) if int(value) != page]
+        done_count = int(state.get("success_count", 0)) + int(state.get("failure_count", 0)) + skipped_count
+        total = done_count + len(queue)
+        progress = 100 if not queue else min(95, int((done_count / max(total, 1)) * 100))
+        set_reader_state(skipped_count=skipped_count, queue=queue, progress=progress, current_page=page)
         return
     if "[ERROR] page=" in line:
         page = int(line.split("page=", 1)[1].split()[0])
         state = clone_reader_state()
         failure_count = int(state.get("failure_count", 0)) + 1
         queue = [value for value in state.get("queue", []) if int(value) != page]
-        total = int(state.get("success_count", 0)) + failure_count + len(queue)
-        progress = min(95, int(((int(state.get("success_count", 0)) + failure_count) / max(total, 1)) * 100))
+        done_count = int(state.get("success_count", 0)) + failure_count + int(state.get("skipped_count", 0))
+        total = done_count + len(queue)
+        progress = min(95, int((done_count / max(total, 1)) * 100))
         set_reader_state(failure_count=failure_count, queue=queue, progress=progress, current_page=page, last_error=line)
         return
 
@@ -453,6 +466,7 @@ def run_reader_job(command: list[str], *, book_id: str, queued_pages: list[int])
             last_error="",
             queue=queued_pages,
             success_count=0,
+            skipped_count=0,
             failure_count=0,
         )
         append_backend_log(f"READER_START {' '.join(command)}")
@@ -1013,6 +1027,9 @@ def api_library_colorize_page(book_id: str, payload: ReaderPageRequest) -> dict[
     total_pages = int(manifest.get("total_pages", 0))
     if payload.pageNumber < 1 or payload.pageNumber > total_pages:
         raise HTTPException(status_code=400, detail=f"Invalid page number: {payload.pageNumber}")
+    if manifest_page_path(book_id, payload.pageNumber, color=True).exists():
+        add_colorized_page(book_id, payload.pageNumber)
+        return {"started": False, "book_id": book_id, "page": payload.pageNumber, "skippedPages": [payload.pageNumber], "message": "当前页已有彩色缓存，已跳过。"}
     command = [str(PYTHON_EXE), str(COLORIZE_BOOK_PAGE_SCRIPT), "--book-id", book_id, "--page", str(payload.pageNumber)]
     worker = threading.Thread(target=run_reader_job, args=(command,), kwargs={"book_id": book_id, "queued_pages": [payload.pageNumber]}, daemon=True)
     worker.start()
@@ -1030,15 +1047,40 @@ def api_library_colorize_range(book_id: str, payload: ReaderRangeRequest) -> dic
     end_page = payload.endPage or total_pages
     if start_page < 1 or end_page < start_page or end_page > total_pages:
         raise HTTPException(status_code=400, detail=f"Invalid page range: {start_page}..{end_page}")
-    queued_pages = list(range(start_page, end_page + 1))
+    requested_pages = list(range(start_page, end_page + 1))
+    skipped_pages = []
+    queued_pages = []
+    for page_number in requested_pages:
+        if manifest_page_path(book_id, page_number, color=True).exists():
+            add_colorized_page(book_id, page_number)
+            skipped_pages.append(page_number)
+        else:
+            queued_pages.append(page_number)
+    if not queued_pages:
+        return {
+            "started": False,
+            "book_id": book_id,
+            "start_page": start_page,
+            "end_page": end_page,
+            "requestedPages": len(requested_pages),
+            "queuedPages": 0,
+            "skippedPages": skipped_pages,
+            "message": "所选范围都已有彩色缓存，已跳过。",
+        }
     command = [str(PYTHON_EXE), str(COLORIZE_BOOK_BATCH_SCRIPT), "--book-id", book_id]
-    if payload.startPage is not None:
-        command.extend(["--start-page", str(payload.startPage)])
-    if payload.endPage is not None:
-        command.extend(["--end-page", str(payload.endPage)])
+    command.extend(["--start-page", str(queued_pages[0])])
+    command.extend(["--end-page", str(queued_pages[-1])])
     worker = threading.Thread(target=run_reader_job, args=(command,), kwargs={"book_id": book_id, "queued_pages": queued_pages}, daemon=True)
     worker.start()
-    return {"started": True, "book_id": book_id, "start_page": start_page, "end_page": end_page}
+    return {
+        "started": True,
+        "book_id": book_id,
+        "start_page": queued_pages[0],
+        "end_page": queued_pages[-1],
+        "requestedPages": len(requested_pages),
+        "queuedPages": len(queued_pages),
+        "skippedPages": skipped_pages,
+    }
 
 
 @app.post("/api/library/book/{book_id}/set-current-page")

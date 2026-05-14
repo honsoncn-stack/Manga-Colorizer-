@@ -68,6 +68,9 @@ In `Reader`, click:
 - `上色后 5 页`
 - or `整本上色`
 
+Already colorized pages are skipped automatically. Whole-book colorization only
+spends time on pages that do not have a color result yet.
+
 The queue state and `reader_colorize.log` are visible in `Colorize Queue`.
 
 ## Export a color PDF

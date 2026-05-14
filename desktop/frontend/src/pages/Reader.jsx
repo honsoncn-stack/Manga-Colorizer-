@@ -34,6 +34,21 @@ function formatPdfExportMessage(result) {
   return `完整 PDF 导出完成：共 ${totalPages} 页，${colorPages} 页使用彩色结果，${bwFallbackPages} 页用黑白原图补齐。`;
 }
 
+function formatColorizeMessage(result, fallback) {
+  if (!result || typeof result !== "object") {
+    return fallback;
+  }
+  const skippedCount = Array.isArray(result.skippedPages) ? result.skippedPages.length : 0;
+  const queuedCount = Number(result.queuedPages || 0);
+  if (result.started === false) {
+    return result.message || "所选页面已有彩色缓存，已跳过。";
+  }
+  if (skippedCount && queuedCount) {
+    return `已提交 ${queuedCount} 页上色任务，跳过 ${skippedCount} 页已有彩色缓存。`;
+  }
+  return fallback;
+}
+
 export default function Reader({
   currentBookId,
   libraryBooks = [],
@@ -250,6 +265,10 @@ export default function Reader({
         setViewMode((value) => (value === "bw" ? "color" : "bw"));
       } else if (event.key.toLowerCase() === "c") {
         event.preventDefault();
+        if (hasColorPage) {
+          setStatusText("当前页已有彩色缓存，已跳过。");
+          return;
+        }
         if (env?.weightsReady) {
           runAction(() => colorizeLibraryPage(currentBookId, currentPage), "已提交当前页上色任务。");
         } else {
@@ -263,7 +282,7 @@ export default function Reader({
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [busy, currentBookId, currentPage, env?.weightsReady, goToPage, manifest, pageInput, runAction]);
+  }, [busy, currentBookId, currentPage, env?.weightsReady, goToPage, hasColorPage, manifest, pageInput, runAction]);
 
   const progressText = useMemo(() => `第 ${currentPage} / ${totalPages || 1} 页 · 已上色 ${colorizedCount} / ${totalPages || 1} 页`, [colorizedCount, currentPage, totalPages]);
 
@@ -392,12 +411,6 @@ export default function Reader({
 
               <div className="reader-toolbar reader-toolbar-wrap">
                 <ActionButton
-                  variant={readerSettings.autoPrefetchNextPages ? "secondary" : "ghost"}
-                  onClick={() => onReaderSettingsChange({ ...readerSettings, autoPrefetchNextPages: !readerSettings.autoPrefetchNextPages })}
-                >
-                  自动预上色后 3 页
-                </ActionButton>
-                <ActionButton
                   variant={readerSettings.wheelPageTurn ? "secondary" : "ghost"}
                   onClick={() => onReaderSettingsChange({ ...readerSettings, wheelPageTurn: !readerSettings.wheelPageTurn })}
                 >
@@ -415,19 +428,20 @@ export default function Reader({
               </div>
 
               <div className="reader-toolbar reader-toolbar-wrap">
-                <ActionButton
-                  loading={busy}
-                  disabled={!env?.weightsReady}
-                  onClick={() => runAction(() => colorizeLibraryPage(currentBookId, currentPage), hasColorPage ? "已提交当前页重新上色任务。" : "已提交当前页上色任务。")}
-                >
-                  {hasColorPage ? "重新上色当前页" : "上色当前页"}
-                </ActionButton>
+                {!hasColorPage ? (
+                  <ActionButton loading={busy} disabled={!env?.weightsReady} onClick={() => runAction(() => colorizeLibraryPage(currentBookId, currentPage), "已提交当前页上色任务。")}>
+                    上色当前页
+                  </ActionButton>
+                ) : null}
                 <ActionButton
                   variant="secondary"
                   loading={busy}
                   disabled={!env?.weightsReady}
                   onClick={() =>
-                    runAction(() => colorizeLibraryRange(currentBookId, currentPage, Math.min(currentPage + 4, totalPages)), "已提交后 5 页上色任务。")
+                    runAction(
+                      () => colorizeLibraryRange(currentBookId, currentPage, Math.min(currentPage + 4, totalPages)),
+                      (result) => formatColorizeMessage(result, "已提交后 5 页上色任务。")
+                    )
                   }
                 >
                   上色后 5 页
@@ -436,7 +450,7 @@ export default function Reader({
                   variant="secondary"
                   loading={busy}
                   disabled={!env?.weightsReady}
-                  onClick={() => runAction(() => colorizeLibraryRange(currentBookId), "已提交整本上色任务。")}
+                  onClick={() => runAction(() => colorizeLibraryRange(currentBookId), (result) => formatColorizeMessage(result, "已提交整本上色任务。"))}
                 >
                   整本上色
                 </ActionButton>
