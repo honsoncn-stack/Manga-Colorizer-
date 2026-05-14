@@ -2,6 +2,10 @@
 
 面向普通用户的推荐安装方式是：先运行环境配置脚本，再运行桌面安装包。
 
+普通用户不要点击 GitHub 仓库首页的 `Code` 按钮下载源码包。请从 Release 页面下载下面这些文件：
+
+https://github.com/honsoncn-stack/Manga-Colorizer-/releases
+
 ## 需要下载
 
 从 GitHub Release 下载：

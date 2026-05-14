@@ -4,6 +4,20 @@ Windows 本地漫画阅读与自动上色工具。导入本地漫画后，可以
 
 > 当前目标是先做好 1.0 免费开源初代产品：能安装、能导入、能阅读、能上色、能导出、能反馈 Bug。2.0 会基于真实用户反馈继续开发。
 
+## 普通用户怎么安装
+
+普通用户不需要点击 GitHub 的 `Code` 下载源码。请进入 Release 页面下载发布包：
+
+https://github.com/honsoncn-stack/Manga-Colorizer-/releases
+
+推荐下载顺序：
+
+1. `Manga-Auto-Colorizer-1.0.0-user-kit.zip`：先解压，运行里面的环境配置脚本。
+2. `Manga Auto Colorizer Setup 1.0.0.exe`：环境配置完成后安装桌面应用。
+3. `SHA256SUMS.txt`：用于校验下载文件。
+
+安装步骤见：[GitHub Release 安装步骤](docs/INSTALL_FROM_GITHUB_RELEASE.md)
+
 ## 项目地址
 
 - GitHub: https://github.com/honsoncn-stack/Manga-Colorizer-
@@ -48,6 +62,13 @@ desktop/backend/    FastAPI 后端
 scripts/            导入、上色、导出、打包和环境脚本
 docs/               用户文档和发布说明
 ```
+
+## 这个仓库怎么用
+
+- 普通用户：只看 Release 和 `docs/INSTALL_FROM_GITHUB_RELEASE.md`。
+- 反馈 Bug：去 Issues，优先使用 Bug 反馈模板。
+- 开发者：克隆仓库后看 `AGENTS.md`、`docs/REPOSITORY_STRUCTURE.md` 和 `docs/PACKAGING_DESKTOP.md`。
+- 不要把本地漫画、模型权重、生成图片、日志或安装包提交到仓库。
 
 ## 启动开发版
 

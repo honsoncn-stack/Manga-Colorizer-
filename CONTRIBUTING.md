@@ -4,6 +4,8 @@
 
 当前阶段最需要的是 1.0 使用反馈：安装、导入、阅读、上色、导出 PDF、图库和日志相关问题。
 
+如果你只是普通用户，请优先从 Release 页面下载 `user-kit.zip` 和安装包，不需要 fork 或 clone 本仓库。
+
 ## 反馈 Bug
 
 请在 GitHub Issues 提交：
