@@ -1,4 +1,4 @@
-# Manga Auto Colorizer
+# Manga Auto Colorizer & Reader
 
 Windows 本地漫画阅读与自动上色工具。导入本地漫画后，可以在阅读器里按页查看黑白原图和彩色结果，并导出完整 PDF。
 
