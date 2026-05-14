@@ -29,9 +29,15 @@ https://github.com/honsoncn-stack/Manga-Colorizer-/releases
 
 安装步骤见：[GitHub Release 安装步骤](docs/INSTALL_FROM_GITHUB_RELEASE.md)
 
+不想运行配置脚本，或已经装过 Conda / Torch 的用户，可以看：[手动安装教程](docs/MANUAL_INSTALLATION.md)
+
 安装前建议先看：[系统要求与排查清单](docs/SYSTEM_REQUIREMENTS.md)
 
 如果电脑没有安装 Conda，请先下载 `Miniconda3-latest-Windows-x86_64.exe`，放到 `user-kit` 解压目录，再运行环境配置脚本。脚本会自动安装到 `D:\Miniconda3`。如果下载到的文件名略有不同，只要是 `Miniconda3...Windows...x86_64.exe`，也可以直接放在解压目录。
+
+环境配置脚本可以重复运行：已经存在的 Conda、项目文件、模型仓库、模型权重和桌面程序会跳过，只补齐缺失的部分。
+
+运行脚本时会提示你是否已有装好 Torch 的 Conda/Python 环境。已有环境的用户可以粘贴 `python.exe` 路径或环境目录；直接回车则使用默认环境 `D:\CondaEnvs\manga-color-v2`。
 
 ## 项目地址
 
@@ -147,6 +153,7 @@ library/books/<book_id>/export/colorized_book.pdf
 
 - [普通用户使用指南](docs/PUBLIC_USER_GUIDE.md)
 - [GitHub Release 安装步骤](docs/INSTALL_FROM_GITHUB_RELEASE.md)
+- [手动安装教程](docs/MANUAL_INSTALLATION.md)
 - [系统要求与排查清单](docs/SYSTEM_REQUIREMENTS.md)
 - [公开版安装与环境配置](docs/PUBLIC_INSTALLATION.md)
 - [1.0 开源发布说明](docs/OPEN_SOURCE_1_0.md)

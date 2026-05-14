@@ -14,10 +14,15 @@ NETWORKS_DIR = REPO_DIR / "networks"
 DENOISER_DIR = REPO_DIR / "denoising" / "models"
 GENERATOR_FILE_ID = "1qmxUEKADkEM4iYLp1fpPLLKnfZ6tcF-t"
 DENOISER_FILE_ID = "161oyQcYpdkVdw8gKz_MA8RD-Wtg9XDp3"
+MIN_WEIGHT_BYTES = 1_048_576
 
 
 def emit(level: str, message: str) -> None:
     print(f"[{level}] {message}")
+
+
+def is_ready_file(path: Path, min_bytes: int = MIN_WEIGHT_BYTES) -> bool:
+    return path.is_file() and path.stat().st_size >= min_bytes
 
 
 def ensure_d_temp() -> None:
@@ -41,9 +46,13 @@ def try_import_gdown():
 
 
 def download_file(gdown_module, file_id: str, destination: Path) -> bool:
+    if is_ready_file(destination):
+        emit("OK", f"Already downloaded, skipping: {destination}")
+        return True
+
     try:
         gdown_module.download(id=file_id, output=str(destination), quiet=False)
-        if destination.exists() and destination.stat().st_size > 0:
+        if is_ready_file(destination):
             emit("OK", f"Downloaded: {destination}")
             return True
     except Exception as exc:  # noqa: BLE001
@@ -56,6 +65,10 @@ def install_generator(generator_path: Path) -> None:
     if generator_path.suffix.lower() == ".zip":
         # The upstream repo loads networks/generator.zip directly.
         zip_target = NETWORKS_DIR / "generator.zip"
+        if is_ready_file(zip_target):
+            emit("OK", f"Generator already installed, skipping: {zip_target}")
+            return
+
         shutil.copy2(generator_path, zip_target)
         emit("OK", f"Copied generator zip to: {zip_target}")
 
@@ -65,6 +78,10 @@ def install_generator(generator_path: Path) -> None:
         return
 
     target = NETWORKS_DIR / generator_path.name
+    if is_ready_file(target):
+        emit("OK", f"Generator already installed, skipping: {target}")
+        return
+
     shutil.copy2(generator_path, target)
     emit("OK", f"Copied generator weight to: {target}")
 
@@ -72,6 +89,10 @@ def install_generator(generator_path: Path) -> None:
 def install_denoiser(denoiser_path: Path) -> None:
     DENOISER_DIR.mkdir(parents=True, exist_ok=True)
     target = DENOISER_DIR / "net_rgb.pth"
+    if is_ready_file(target):
+        emit("OK", f"Denoiser already installed, skipping: {target}")
+        return
+
     shutil.copy2(denoiser_path, target)
     emit("OK", f"Copied denoiser weight to: {target}")
 
@@ -95,6 +116,14 @@ def main() -> int:
         emit("WARN", "Clone or initialize external/manga-colorization-v2 first.")
         return 1
 
+    generator_target = NETWORKS_DIR / "generator.zip"
+    denoiser_target = DENOISER_DIR / "net_rgb.pth"
+    generator_installed = is_ready_file(generator_target)
+    denoiser_installed = is_ready_file(denoiser_target)
+    if generator_installed and denoiser_installed:
+        emit("OK", "Model weights already installed. Nothing to download.")
+        return 0
+
     gdown_module = try_import_gdown()
     if gdown_module is None:
         print_manual_instructions()
@@ -106,23 +135,32 @@ def main() -> int:
     ]
     denoiser_path = DOWNLOADS_DIR / "denoiser.pth"
 
-    generator_ok = False
-    chosen_generator = generator_candidates[0]
-    for candidate in generator_candidates:
-        if download_file(gdown_module, GENERATOR_FILE_ID, candidate):
-            chosen_generator = candidate
-            generator_ok = True
-            break
+    generator_ok = generator_installed
+    chosen_generator: Path | None = None
+    if generator_installed:
+        emit("OK", f"Generator already installed, skipping download: {generator_target}")
+    else:
+        for candidate in generator_candidates:
+            if download_file(gdown_module, GENERATOR_FILE_ID, candidate):
+                chosen_generator = candidate
+                generator_ok = True
+                break
 
-    denoiser_ok = download_file(gdown_module, DENOISER_FILE_ID, denoiser_path)
+    if denoiser_installed:
+        emit("OK", f"Denoiser already installed, skipping download: {denoiser_target}")
+        denoiser_ok = True
+    else:
+        denoiser_ok = download_file(gdown_module, DENOISER_FILE_ID, denoiser_path)
 
     if not generator_ok or not denoiser_ok:
         print_manual_instructions()
         return 1
 
     try:
-        install_generator(chosen_generator)
-        install_denoiser(denoiser_path)
+        if chosen_generator is not None:
+            install_generator(chosen_generator)
+        if not denoiser_installed:
+            install_denoiser(denoiser_path)
     except Exception as exc:  # noqa: BLE001
         emit("ERROR", f"Weight installation failed: {exc}")
         return 1

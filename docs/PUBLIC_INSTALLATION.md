@@ -36,6 +36,16 @@ cd D:\MangaAutoColorizerSetup
 powershell -ExecutionPolicy Bypass -File .\setup_customer_environment.ps1
 ```
 
+脚本可以重复运行。它会先检查 Conda、项目目录、模型仓库、模型权重和桌面程序；已经准备好的部分会跳过，只补齐缺失的文件或环境。
+
+脚本启动时会询问是否使用已有 Conda/Python 环境。如果你已经在某个 D 盘环境里装好了 `torch` 和 `torchvision`，可以直接粘贴该环境的 `python.exe` 路径或环境目录；直接回车则使用默认环境。
+
+也可以在提示里粘贴完整命令中的环境参数，例如：
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\setup_customer_environment.ps1 -CondaEnvPath D:\CondaEnvs\my-env
+```
+
 脚本会准备默认 D 盘路径：
 
 ```text
@@ -86,6 +96,12 @@ powershell -ExecutionPolicy Bypass -File scripts\create_dev_desktop_shortcut.ps1
 powershell -ExecutionPolicy Bypass -File scripts\setup_customer_environment.ps1
 ```
 
+不需要交互提示时可以使用：
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\setup_customer_environment.ps1 -NonInteractive
+```
+
 这个脚本可以检查或准备：
 
 - D 盘项目目录。
@@ -96,6 +112,22 @@ powershell -ExecutionPolicy Bypass -File scripts\setup_customer_environment.ps1
 - 安装包运行所需的本地路径。
 
 如果脚本找不到本地项目包，会尝试从 GitHub 克隆本项目。如果找不到 `manga-colorization-v2`，会尝试从 GitHub 克隆或下载上游仓库。
+
+## 手动安装方式
+
+不想运行配置脚本，或者已经有 Conda / Torch 环境的用户，可以只补缺失项。完整步骤见：
+
+```text
+docs/MANUAL_INSTALLATION.md
+```
+
+常用链接：
+
+- Miniconda：https://www.anaconda.com/docs/getting-started/miniconda/install
+- Git for Windows：https://git-scm.com/downloads/win
+- PyTorch：https://pytorch.org/get-started/locally/
+- Visual C++ Redistributable：https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist
+- 原模型项目：https://github.com/qweasdd/manga-colorization-v2
 
 ## 模型权重
 

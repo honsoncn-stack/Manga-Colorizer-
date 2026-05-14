@@ -25,7 +25,8 @@ param(
     [string]$TorchIndexUrl = "",
     [switch]$SkipPythonPackages,
     [switch]$SkipAppInstall,
-    [switch]$SkipWeightInstall
+    [switch]$SkipWeightInstall,
+    [switch]$NonInteractive
 )
 
 $ErrorActionPreference = "Stop"
@@ -55,6 +56,77 @@ function Assert-DDrivePath {
     }
 }
 
+function Resolve-CondaEnvPathFromUserInput {
+    param([string]$UserInput)
+    $value = $UserInput.Trim().Trim('"')
+    if (-not (Test-NonEmpty $value)) {
+        return ""
+    }
+
+    $commandMatch = [regex]::Match($value, "-CondaEnvPath\s+(`"([^`"]+)`"|'([^']+)'|(\S+))")
+    if ($commandMatch.Success) {
+        $value = @(
+            $commandMatch.Groups[2].Value,
+            $commandMatch.Groups[3].Value,
+            $commandMatch.Groups[4].Value
+        ) | Where-Object { Test-NonEmpty $_ } | Select-Object -First 1
+    }
+
+    $value = $value.Trim().Trim('"').Trim("'")
+
+    $fullPath = [System.IO.Path]::GetFullPath($value)
+    if (Test-Path -LiteralPath $fullPath -PathType Leaf) {
+        if ((Split-Path -Leaf $fullPath) -ieq "python.exe") {
+            return (Split-Path -Parent $fullPath)
+        }
+        throw "Please provide a Conda environment directory or a python.exe path. Current input: $fullPath"
+    }
+
+    if (Test-Path -LiteralPath $fullPath -PathType Container) {
+        $pythonInDir = Join-Path $fullPath "python.exe"
+        if (Test-Path -LiteralPath $pythonInDir -PathType Leaf) {
+            return $fullPath
+        }
+        throw "The folder exists but python.exe was not found in it: $fullPath"
+    }
+
+    throw "Path not found: $fullPath"
+}
+
+function Confirm-TargetCondaEnv {
+    if ($NonInteractive) {
+        return
+    }
+
+    Write-Host ""
+    Write-Host "Python/Torch environment selection" -ForegroundColor Cyan
+    Write-Host "Default environment: $CondaEnvPath"
+    Write-Host "If you already have a Conda/Python environment with torch and torchvision installed,"
+    Write-Host "paste its python.exe path or environment folder now."
+    Write-Host "Example python.exe: D:\CondaEnvs\my-env\python.exe"
+    Write-Host "Example env folder: D:\CondaEnvs\my-env"
+    Write-Host "Command example: powershell -ExecutionPolicy Bypass -File .\setup_customer_environment.ps1 -CondaEnvPath D:\CondaEnvs\my-env"
+    Write-Host "Press Enter to use the default environment."
+
+    $userInput = Read-Host "Existing environment path or command"
+    if (-not (Test-NonEmpty $userInput)) {
+        Write-Ok "Using default Conda environment: $CondaEnvPath"
+        return
+    }
+
+    $resolvedEnv = Resolve-CondaEnvPathFromUserInput $userInput
+    Assert-DDrivePath $resolvedEnv "CondaEnvPath"
+    $script:CondaEnvPath = $resolvedEnv
+    Write-Ok "Using existing environment: $script:CondaEnvPath"
+
+    $pythonExe = Join-Path $script:CondaEnvPath "python.exe"
+    if (Test-PythonImports -PythonExe $pythonExe -Modules @("torch", "torchvision")) {
+        Write-Ok "Torch and torchvision were detected in the selected environment."
+    } else {
+        Write-Warn "Torch or torchvision was not detected in the selected environment. The script will install missing Python packages later."
+    }
+}
+
 function Ensure-Directory {
     param([string]$PathValue)
     New-Item -ItemType Directory -Path $PathValue -Force | Out-Null
@@ -73,6 +145,18 @@ function Find-FirstExistingPath {
         }
     }
     return ""
+}
+
+function Test-ReadyFile {
+    param([string]$PathValue, [long]$MinBytes = 1)
+    if (-not (Test-NonEmpty $PathValue)) {
+        return $false
+    }
+    if (-not (Test-Path -LiteralPath $PathValue -PathType Leaf)) {
+        return $false
+    }
+    $item = Get-Item -LiteralPath $PathValue
+    return ($item.Length -ge $MinBytes)
 }
 
 function Find-CommandPath {
@@ -95,6 +179,17 @@ function Invoke-Checked {
     if ($process.ExitCode -ne 0) {
         throw "Command failed with exit code $($process.ExitCode): $FilePath"
     }
+}
+
+function Test-PythonImports {
+    param([string]$PythonExe, [string[]]$Modules)
+    if (-not (Test-Path -LiteralPath $PythonExe)) {
+        return $false
+    }
+
+    $importCode = ($Modules | ForEach-Object { "import $_" }) -join "; "
+    & $PythonExe -c $importCode > $null 2>&1
+    return ($LASTEXITCODE -eq 0)
 }
 
 function Expand-SingleRootZip {
@@ -329,13 +424,28 @@ function Install-Weights {
     Ensure-Directory $networksDir
     Ensure-Directory $denoiserDir
 
+    $generatorTarget = Join-Path $networksDir "generator.zip"
+    $denoiserTarget = Join-Path $denoiserDir "net_rgb.pth"
+    $generatorInstalled = Test-ReadyFile $generatorTarget 1048576
+    $denoiserInstalled = Test-ReadyFile $denoiserTarget 1048576
+
+    if ($generatorInstalled -and $denoiserInstalled) {
+        Write-Ok "Model weights already exist. Skipping weight copy."
+        return
+    }
+
     $weightsDir = Find-FirstExistingPath @(
         $WeightsSource,
         (Join-Path $PackageRoot "weights"),
         (Join-Path $PackageRoot "models\downloads")
     )
     if (-not (Test-NonEmpty $weightsDir)) {
-        Write-Warn "The public Release user kit should include PackageRoot\weights with generator.zip and denoiser.pth. Re-download the full user kit or provide -WeightsSource."
+        if (-not $generatorInstalled) {
+            Write-Warn "Missing generator.zip. Provide PackageRoot\weights\generator.zip or pass -WeightsSource."
+        }
+        if (-not $denoiserInstalled) {
+            Write-Warn "Missing denoiser.pth. Provide PackageRoot\weights\denoiser.pth or pass -WeightsSource."
+        }
         return
     }
 
@@ -347,18 +457,22 @@ function Install-Weights {
         (Join-Path $weightsDir "net_rgb.pth")
     )
 
-    if (Test-NonEmpty $generatorZip) {
+    if ($generatorInstalled) {
+        Write-Ok "Generator weight already exists. Skipping: $generatorTarget"
+    } elseif (Test-NonEmpty $generatorZip) {
         Copy-Item -LiteralPath $generatorZip -Destination (Join-Path $downloadsDir "generator.zip") -Force
-        Copy-Item -LiteralPath $generatorZip -Destination (Join-Path $networksDir "generator.zip") -Force
+        Copy-Item -LiteralPath $generatorZip -Destination $generatorTarget -Force
         Expand-Archive -LiteralPath $generatorZip -DestinationPath $networksDir -Force
         Write-Ok "Generator weight installed."
     } else {
         Write-Warn "generator.zip was not found in $weightsDir."
     }
 
-    if (Test-NonEmpty $denoiserPth) {
+    if ($denoiserInstalled) {
+        Write-Ok "Denoiser weight already exists. Skipping: $denoiserTarget"
+    } elseif (Test-NonEmpty $denoiserPth) {
         Copy-Item -LiteralPath $denoiserPth -Destination (Join-Path $downloadsDir "denoiser.pth") -Force
-        Copy-Item -LiteralPath $denoiserPth -Destination (Join-Path $denoiserDir "net_rgb.pth") -Force
+        Copy-Item -LiteralPath $denoiserPth -Destination $denoiserTarget -Force
         Write-Ok "Denoiser weight installed."
     } else {
         Write-Warn "denoiser.pth or net_rgb.pth was not found in $weightsDir."
@@ -389,21 +503,42 @@ function Install-PythonEnvironment {
         $pipArgsPrefix += @("--no-index", "--find-links", $Wheelhouse)
     }
 
-    Invoke-Checked -FilePath $pythonExe -Arguments @("-m", "pip", "install", "--upgrade", "pip") -WorkingDirectory $ProjectRoot
+    try {
+        Invoke-Checked -FilePath $pythonExe -Arguments @("-m", "pip", "--version") -WorkingDirectory $ProjectRoot
+    } catch {
+        Write-Warn "pip was not available in the Conda environment. Running ensurepip."
+        Invoke-Checked -FilePath $pythonExe -Arguments @("-m", "ensurepip", "--upgrade") -WorkingDirectory $ProjectRoot
+    }
 
     $requirementsApp = Join-Path $ProjectRoot "requirements-app.txt"
     if (Test-Path -LiteralPath $requirementsApp) {
         Invoke-Checked -FilePath $pythonExe -Arguments ($pipArgsPrefix + @("-r", $requirementsApp)) -WorkingDirectory $ProjectRoot
     }
 
-    $requiredPackages = @("fastapi", "uvicorn", "pymupdf", "pyyaml", "pillow", "opencv-python", "matplotlib")
+    $requiredPackages = @("fastapi", "uvicorn", "pymupdf", "pyyaml", "pillow", "opencv-python", "matplotlib", "numpy", "scikit-image")
     Invoke-Checked -FilePath $pythonExe -Arguments ($pipArgsPrefix + $requiredPackages) -WorkingDirectory $ProjectRoot
 
-    $torchArgs = $pipArgsPrefix + @("torch", "torchvision")
-    if ((-not (Test-NonEmpty $Wheelhouse)) -and (Test-NonEmpty $TorchIndexUrl)) {
-        $torchArgs += @("--index-url", $TorchIndexUrl)
+    if (Test-PythonImports -PythonExe $pythonExe -Modules @("torch", "torchvision")) {
+        Write-Ok "Torch and torchvision already available. Skipping Torch install."
+    } else {
+        $torchArgs = $pipArgsPrefix + @("torch", "torchvision")
+        if ((-not (Test-NonEmpty $Wheelhouse)) -and (Test-NonEmpty $TorchIndexUrl)) {
+            $torchArgs += @("--index-url", $TorchIndexUrl)
+        }
+        Invoke-Checked -FilePath $pythonExe -Arguments $torchArgs -WorkingDirectory $ProjectRoot
     }
-    Invoke-Checked -FilePath $pythonExe -Arguments $torchArgs -WorkingDirectory $ProjectRoot
+}
+
+function New-DesktopShortcutForApp {
+    param([string]$AppExe, [string]$WorkingDir)
+    $desktopShortcut = Join-Path ([Environment]::GetFolderPath("Desktop")) "Manga Auto Colorizer.lnk"
+    $shell = New-Object -ComObject WScript.Shell
+    $shortcut = $shell.CreateShortcut($desktopShortcut)
+    $shortcut.TargetPath = $AppExe
+    $shortcut.WorkingDirectory = $WorkingDir
+    $shortcut.IconLocation = $AppExe
+    $shortcut.Save()
+    Write-Ok "Desktop shortcut ready: $desktopShortcut"
 }
 
 function Install-DesktopApp {
@@ -413,6 +548,13 @@ function Install-DesktopApp {
     }
 
     Write-Step "Installing desktop app to D: drive"
+    $appExe = Join-Path $InstallDir "Manga Auto Colorizer.exe"
+    if (Test-ReadyFile $appExe 1024) {
+        Write-Ok "Desktop app already exists. Skipping app copy: $appExe"
+        New-DesktopShortcutForApp -AppExe $appExe -WorkingDir $InstallDir
+        return
+    }
+
     $appSourcePath = Find-FirstExistingPath @(
         $AppSource,
         (Join-Path $PackageRoot "app\win-unpacked"),
@@ -425,19 +567,11 @@ function Install-DesktopApp {
     }
 
     Copy-FolderContents -SourceDir $appSourcePath -TargetDir $InstallDir
-    $appExe = Join-Path $InstallDir "Manga Auto Colorizer.exe"
     if (-not (Test-Path -LiteralPath $appExe)) {
         throw "Installed app exe not found: $appExe"
     }
 
-    $desktopShortcut = Join-Path ([Environment]::GetFolderPath("Desktop")) "Manga Auto Colorizer.lnk"
-    $shell = New-Object -ComObject WScript.Shell
-    $shortcut = $shell.CreateShortcut($desktopShortcut)
-    $shortcut.TargetPath = $appExe
-    $shortcut.WorkingDirectory = $InstallDir
-    $shortcut.IconLocation = $appExe
-    $shortcut.Save()
-    Write-Ok "Desktop shortcut created: $desktopShortcut"
+    New-DesktopShortcutForApp -AppExe $appExe -WorkingDir $InstallDir
 }
 
 function Validate-Setup {
@@ -477,6 +611,7 @@ $InstallDir = [System.IO.Path]::GetFullPath($InstallDir)
 Assert-DDrivePath $ProjectRoot "ProjectRoot"
 Assert-DDrivePath $CondaEnvPath "CondaEnvPath"
 Assert-DDrivePath $InstallDir "InstallDir"
+Confirm-TargetCondaEnv
 
 Ensure-Directory "D:\Temp"
 Ensure-Directory "D:\AICache\pip"

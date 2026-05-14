@@ -60,6 +60,21 @@ If the computer does not already have Miniconda or Anaconda, place
 it. The script also accepts similarly named `Miniconda3...Windows...x86_64.exe`
 installers in the same folder.
 
+Manual setup without the script is also documented for users who already have
+Conda, Python, or Torch configured. See `docs/MANUAL_INSTALLATION.md`.
+
+When the setup script runs interactively, it asks whether the user already has
+a D: drive Python/Conda environment with Torch installed. Users can paste that
+environment folder or its `python.exe` path; pressing Enter keeps the default
+environment. Automation users can pass `-NonInteractive`.
+
+Useful official links:
+
+- Miniconda: https://www.anaconda.com/docs/getting-started/miniconda/install
+- Git for Windows: https://git-scm.com/downloads/win
+- PyTorch: https://pytorch.org/get-started/locally/
+- Visual C++ Redistributable: https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist
+
 The automatic colorization model is based on `manga-colorization-v2`:
 
 https://github.com/qweasdd/manga-colorization-v2
@@ -69,6 +84,7 @@ Thanks to the original model developer for the work and authorization support.
 See:
 
 - `docs/SYSTEM_REQUIREMENTS.md`
+- `docs/MANUAL_INSTALLATION.md`
 - `docs/PUBLIC_INSTALLATION.md`
 - `docs/PUBLIC_USER_GUIDE.md`
 - `LICENSE_NOTICE.md`

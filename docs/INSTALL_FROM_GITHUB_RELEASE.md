@@ -36,6 +36,16 @@ cd D:\MangaAutoColorizerSetup
 powershell -ExecutionPolicy Bypass -File .\setup_customer_environment.ps1
 ```
 
+这个脚本可以重复运行。它会先检查已有环境，已经存在的 Conda、项目文件、模型仓库、模型权重和桌面程序会跳过，只补齐缺失的部分。
+
+脚本启动时会询问是否使用已有 Conda/Python 环境。如果你已经在某个 D 盘环境里装好了 `torch` 和 `torchvision`，可以直接粘贴该环境的 `python.exe` 路径或环境目录；直接回车则使用默认环境 `D:\CondaEnvs\manga-color-v2`。
+
+提示出现时也可以粘贴完整命令里的环境参数，例如：
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\setup_customer_environment.ps1 -CondaEnvPath D:\CondaEnvs\my-env
+```
+
 5. 运行 `Manga Auto Colorizer Setup 1.0.0.exe`。
 6. 安装目录建议选择 `D:\Programs\Manga Auto Colorizer`。
 7. 从桌面快捷方式启动 `Manga Auto Colorizer`。
@@ -45,6 +55,38 @@ powershell -ExecutionPolicy Bypass -File .\setup_customer_environment.ps1
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\setup_customer_environment.ps1 -CondaInstaller D:\Downloads\Miniconda3-latest-Windows-x86_64.exe
 ```
+
+如果你想在无人值守或批处理里运行，不想出现交互提示，可以加：
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\setup_customer_environment.ps1 -NonInteractive
+```
+
+## 手动安装（不使用脚本）
+
+如果你已经配置过 Conda、Python 或 Torch，也可以不运行配置脚本，按手动方式只补缺失项：
+
+1. 下载并解压 `Manga-Auto-Colorizer-1.0.0-user-kit.zip`。
+2. 准备 `D:\AIProjects\manga-auto-colorizer` 项目目录。
+3. 准备 `D:\CondaEnvs\manga-color-v2` 或你自己的 Conda 环境。
+4. 安装缺失的 Python 依赖。
+5. 如果 `torch` 和 `torchvision` 已经能导入，就不要重复安装 Torch。
+6. 把 `weights\generator.zip` 和 `weights\denoiser.pth` 放到指定模型目录。
+7. 再运行桌面安装包。
+
+完整手动教程见：
+
+```text
+docs/MANUAL_INSTALLATION.md
+```
+
+常用官方链接：
+
+- Miniconda：https://www.anaconda.com/docs/getting-started/miniconda/install
+- Git for Windows：https://git-scm.com/downloads/win
+- PyTorch：https://pytorch.org/get-started/locally/
+- Visual C++ Redistributable：https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist
+- 原模型项目：https://github.com/qweasdd/manga-colorization-v2
 
 ## 模型与致谢
 
@@ -72,6 +114,7 @@ https://github.com/qweasdd/manga-colorization-v2
 
 - 系统要求：`docs/SYSTEM_REQUIREMENTS.md`
 - GitHub Release 安装步骤：`docs/INSTALL_FROM_GITHUB_RELEASE.md`
+- 手动安装教程：`docs/MANUAL_INSTALLATION.md`
 - 使用指南：`docs/PUBLIC_USER_GUIDE.md`
 - 安装与环境：`docs/PUBLIC_INSTALLATION.md`
 - 许可证边界：`LICENSE_NOTICE.md`
