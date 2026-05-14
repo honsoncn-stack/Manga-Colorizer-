@@ -17,6 +17,9 @@ param(
     [string]$AppSource = "",
     [string]$MangaColorizationSource = "",
     [string]$MangaColorizationZip = "",
+    [string]$ProjectRepositoryUrl = "https://github.com/honsoncn-stack/Manga-Colorizer-.git",
+    [string]$MangaColorizationRepositoryUrl = "https://github.com/qweasdd/manga-colorization-v2.git",
+    [string]$MangaColorizationArchiveUrl = "https://github.com/qweasdd/manga-colorization-v2/archive/refs/heads/master.zip",
     [string]$WeightsSource = "",
     [string]$Wheelhouse = "",
     [string]$TorchIndexUrl = "",
@@ -72,6 +75,15 @@ function Find-FirstExistingPath {
     return ""
 }
 
+function Find-CommandPath {
+    param([string]$CommandName)
+    $command = Get-Command $CommandName -ErrorAction SilentlyContinue
+    if ($null -eq $command) {
+        return ""
+    }
+    return $command.Source
+}
+
 function Invoke-Checked {
     param(
         [string]$FilePath,
@@ -83,6 +95,36 @@ function Invoke-Checked {
     if ($process.ExitCode -ne 0) {
         throw "Command failed with exit code $($process.ExitCode): $FilePath"
     }
+}
+
+function Expand-SingleRootZip {
+    param(
+        [string]$ZipPath,
+        [string]$TargetDir,
+        [string]$ExpectedRelativePath
+    )
+    if (-not (Test-Path -LiteralPath $ZipPath)) {
+        throw "Zip file not found: $ZipPath"
+    }
+    $tempRoot = Join-Path "D:\Temp" ("manga-auto-colorizer-setup-" + [System.Guid]::NewGuid().ToString("N"))
+    Ensure-Directory $tempRoot
+    Expand-Archive -LiteralPath $ZipPath -DestinationPath $tempRoot -Force
+
+    $directExpected = Join-Path $tempRoot $ExpectedRelativePath
+    if (Test-Path -LiteralPath $directExpected) {
+        Copy-FolderContents -SourceDir $tempRoot -TargetDir $TargetDir
+        return
+    }
+
+    $rootDirs = Get-ChildItem -LiteralPath $tempRoot -Directory
+    foreach ($rootDir in $rootDirs) {
+        if (Test-Path -LiteralPath (Join-Path $rootDir.FullName $ExpectedRelativePath)) {
+            Copy-FolderContents -SourceDir $rootDir.FullName -TargetDir $TargetDir
+            return
+        }
+    }
+
+    throw "Zip extracted, but expected file was not found: $ExpectedRelativePath"
 }
 
 function Find-Conda {
@@ -175,6 +217,15 @@ function Install-ProjectFiles {
         return
     }
 
+    $gitPath = Find-CommandPath "git"
+    if ((Test-NonEmpty $gitPath) -and (Test-NonEmpty $ProjectRepositoryUrl)) {
+        Invoke-Checked -FilePath $gitPath -Arguments @("clone", "--depth", "1", $ProjectRepositoryUrl, $ProjectRoot) -WorkingDirectory (Split-Path -Parent $ProjectRoot)
+        if (Test-Path -LiteralPath (Join-Path $ProjectRoot "desktop\backend\server.py")) {
+            Write-Ok "Project cloned from GitHub: $ProjectRepositoryUrl"
+            return
+        }
+    }
+
     throw "Project files were not found. Provide -ProjectSource, -ProjectZip, or place project files in PackageRoot\project."
 }
 
@@ -209,6 +260,30 @@ function Install-MangaColorizationRepo {
         Copy-FolderContents -SourceDir $repoSourcePath -TargetDir $repoDir
         Write-Ok "manga-colorization-v2 copied from: $repoSourcePath"
         return
+    }
+
+    $gitPath = Find-CommandPath "git"
+    if ((Test-NonEmpty $gitPath) -and (Test-NonEmpty $MangaColorizationRepositoryUrl)) {
+        Invoke-Checked -FilePath $gitPath -Arguments @("clone", "--depth", "1", $MangaColorizationRepositoryUrl, $repoDir) -WorkingDirectory (Split-Path -Parent $repoDir)
+        if (Test-Path -LiteralPath (Join-Path $repoDir "inference.py")) {
+            Write-Ok "manga-colorization-v2 cloned from GitHub"
+            return
+        }
+    }
+
+    if (Test-NonEmpty $MangaColorizationArchiveUrl) {
+        try {
+            $archivePath = Join-Path "D:\AICache" "manga-colorization-v2-master.zip"
+            Write-Warn "Git was not found. Downloading manga-colorization-v2 archive from GitHub."
+            Invoke-WebRequest -Uri $MangaColorizationArchiveUrl -OutFile $archivePath
+            Expand-SingleRootZip -ZipPath $archivePath -TargetDir $repoDir -ExpectedRelativePath "inference.py"
+            if (Test-Path -LiteralPath (Join-Path $repoDir "inference.py")) {
+                Write-Ok "manga-colorization-v2 downloaded from GitHub archive"
+                return
+            }
+        } catch {
+            Write-Warn "Could not download manga-colorization-v2 automatically: $($_.Exception.Message)"
+        }
     }
 
     Write-Warn "manga-colorization-v2 was not found. The app can open, but colorization will not work until the repo is placed at $repoDir."
@@ -320,7 +395,8 @@ function Install-DesktopApp {
         (Join-Path $ProjectRoot "desktop\release\win-unpacked")
     )
     if (-not (Test-NonEmpty $appSourcePath)) {
-        throw "win-unpacked app folder was not found. Provide -AppSource or place it in PackageRoot\app\win-unpacked."
+        Write-Warn "win-unpacked app folder was not found. If you downloaded the GitHub Release installer, run Manga Auto Colorizer Setup 1.0.0.exe after this script."
+        return
     }
 
     Copy-FolderContents -SourceDir $appSourcePath -TargetDir $InstallDir
@@ -381,6 +457,7 @@ Ensure-Directory "D:\Temp"
 Ensure-Directory "D:\AICache\pip"
 Ensure-Directory "D:\AICache\huggingface"
 Ensure-Directory "D:\AICache\torch"
+Ensure-Directory "D:\DevTools\ElectronLibs\npm-cache"
 
 $env:PIP_CACHE_DIR = "D:\AICache\pip"
 $env:HF_HOME = "D:\AICache\huggingface"
@@ -390,6 +467,7 @@ $env:TORCH_HOME = "D:\AICache\torch"
 $env:XDG_CACHE_HOME = "D:\AICache"
 $env:TEMP = "D:\Temp"
 $env:TMP = "D:\Temp"
+$env:npm_config_cache = "D:\DevTools\ElectronLibs\npm-cache"
 
 Install-ProjectFiles
 Install-MangaColorizationRepo

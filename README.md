@@ -117,6 +117,7 @@ library/books/<book_id>/export/colorized_book.pdf
 ## 文档
 
 - [普通用户使用指南](docs/PUBLIC_USER_GUIDE.md)
+- [GitHub Release 安装步骤](docs/INSTALL_FROM_GITHUB_RELEASE.md)
 - [公开版安装与环境配置](docs/PUBLIC_INSTALLATION.md)
 - [1.0 开源发布说明](docs/OPEN_SOURCE_1_0.md)
 - [1.0.0 发布说明](docs/RELEASE_NOTES_1.0.0.md)

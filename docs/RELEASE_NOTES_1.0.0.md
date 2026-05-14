@@ -28,7 +28,13 @@ Windows desktop manga reader and automatic colorization workflow.
 
 ## Download
 
-Use the installer or portable executable attached to the GitHub Release.
+For normal users, download the setup kit first, then run the installer.
+
+Setup kit:
+
+```text
+Manga-Auto-Colorizer-1.0.0-user-kit.zip
+```
 
 Recommended artifact:
 
@@ -45,7 +51,10 @@ Manga Auto Colorizer 1.0.0.exe
 ## First-run notes
 
 The app expects the local project/runtime environment and model files to be
-prepared separately. See:
+prepared before the desktop shell is launched. Use the setup script inside
+`Manga-Auto-Colorizer-1.0.0-user-kit.zip`, then run the installer.
+
+See:
 
 - `docs/PUBLIC_INSTALLATION.md`
 - `docs/PUBLIC_USER_GUIDE.md`
