@@ -22,6 +22,14 @@
 10. No ComfyUI_MangaNinjia.
 11. No copyrighted anime/IP assets.
 
+## Public 1.0 release rules
+
+1. Keep README and public docs friendly to normal Windows users.
+2. Direct bug reports to GitHub Issues.
+3. Put installers and portable executables in GitHub Release, not in the source repository.
+4. Do not commit customer-only delivery docs, generated handoff summaries, or local run artifacts.
+5. Clearly state that model weights and third-party dependencies follow their own licenses.
+
 ## Path and safety rules
 
 1. Use `pathlib` for Python path handling.

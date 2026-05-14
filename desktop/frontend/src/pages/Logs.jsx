@@ -27,7 +27,7 @@ export default function Logs({ logs, onRefresh }) {
     <div className="page-stack">
       <MangaCard
         title="运行记录"
-        subtitle="上色、阅读和应用运行记录都集中在这里。"
+        subtitle="上色、阅读和应用运行记录都集中在这里。遇到 Bug 时，可以把错误记录复制到 GitHub Issues 反馈。"
         actions={
           <ActionButton variant="ghost" hint="重新读取记录" onClick={onRefresh}>
             刷新

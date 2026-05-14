@@ -16,6 +16,7 @@ export default function About() {
               https://github.com/honsoncn-stack/Manga-Colorizer-
             </a>
           </li>
+          <li>仓库已开设 Bug 反馈窗口，后续会开发 2.0；喜欢的话可以点个 Star。</li>
           <li>开发者：Ray的练琴时光（全平台同名）</li>
         </ul>
       </MangaCard>

@@ -35,11 +35,19 @@ Create a desktop shortcut:
 powershell -ExecutionPolicy Bypass -File scripts\create_desktop_shortcut.ps1
 ```
 
+Create a development shortcut that launches the local Electron app:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\create_dev_desktop_shortcut.ps1
+```
+
 ## Output
 
 Artifacts are written to:
 
 - `desktop/release/`
+
+Release artifacts should be uploaded to GitHub Release. Do not commit installers or portable executables to the source repository.
 
 ## Common issues
 

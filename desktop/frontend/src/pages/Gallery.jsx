@@ -191,7 +191,7 @@ export default function Gallery({ libraryBooks = [], onOpenFolder }) {
 
   return (
     <div className="page-stack gallery-layout">
-      <MangaCard title="图库" subtitle="分页查看临时彩图和书库彩页。鼠标放在图片区可用滚轮翻页。">
+      <MangaCard title="图库" subtitle="分页查看临时彩图和书库彩页，支持批量选择和打开输出目录。">
         <div className="tab-row">
           {filters.map((filter) => (
             <button

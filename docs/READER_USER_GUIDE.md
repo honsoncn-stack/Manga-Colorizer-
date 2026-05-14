@@ -72,18 +72,18 @@ The queue state and `reader_colorize.log` are visible in `Colorize Queue`.
 
 You can export from:
 
-- `Library` by clicking `导出 PDF`
-- or `Reader` by clicking `导出彩色 PDF`
+- `Library` by clicking `导出完整 PDF`
+- or `Reader` by clicking `导出完整 PDF`
 
 Output path:
 
 - `library/books/<book_id>/export/colorized_book.pdf`
 
-If some pages are not colorized yet, export uses the BW page as fallback for those pages.
+If some pages are not colorized yet, export uses the BW page as fallback for those pages. Exporting does not colorize new pages; colorize pages first, then export again.
 
 ## Browse the gallery
 
-`Gallery` now uses pagination to stay responsive when many images exist.
+`Gallery` uses pagination to stay responsive when many images exist.
 
 - default page size: `24`
 - selectable page sizes:
@@ -94,10 +94,12 @@ If some pages are not colorized yet, export uses the BW page as fallback for tho
 
 You can switch between:
 
-- `流水线输出`
-- `书库彩页输出`
+- `临时彩图`
+- `书库彩页`
 
 Reader library outputs can also be filtered by book.
+
+Gallery does not use mouse-wheel page switching. Use `首页`, `上一页`, `下一页`, `末页`, or the page jump input.
 
 ## View logs
 
@@ -109,6 +111,12 @@ Open `Logs` to inspect:
 - `阅读器日志`
 
 If a log file does not exist yet, the page shows `暂无日志` instead of failing.
+
+When reporting bugs, copy the relevant log text into GitHub Issues:
+
+- https://github.com/honsoncn-stack/Manga-Colorizer-/issues
+
+Do not upload copyrighted manga files, full PDFs, model weights, or private files.
 
 ## Local cache and Git
 

@@ -15,4 +15,8 @@
 - `npm run build:frontend` succeeds.
 - `npm run dist` succeeds.
 - The installer or portable exe exists in `desktop/release/`.
-- `node_modules/`, `dist/`, `build/`, `release/`, `input/`, `output/`, `models/`, `logs/`, and `reports/` are not committed.
+- GitHub Issue templates exist under `.github/ISSUE_TEMPLATE/`.
+- README links to user guide, installation guide, feedback page, and release notes.
+- GitHub Release notes tell users where to download the installer or portable exe.
+- `node_modules/`, `dist/`, `build/`, `release/`, `desktop/release/`, `input/`, `output/`, `models/`, `logs/`, `reports/`, and `library/books/` are not committed.
+- Model weights, user manga files, exported PDFs, installers, and portable executables are not committed.

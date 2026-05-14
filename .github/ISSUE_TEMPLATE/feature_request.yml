@@ -1,0 +1,30 @@
+name: 功能建议
+description: 建议 1.0 改进或 2.0 新功能
+title: "[Feature] "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        欢迎提出使用体验和 2.0 方向建议。请尽量描述真实使用场景。
+  - type: textarea
+    id: scenario
+    attributes:
+      label: 使用场景
+      description: 你在什么情况下需要这个功能？
+      placeholder: "当我在处理很多本漫画时，我希望 ..."
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: 建议方案
+      description: 你希望应用怎么做？
+      placeholder: "希望增加 ..."
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: 现在的替代做法
+      placeholder: "目前我只能 ..."

@@ -1,199 +1,133 @@
 # Manga Auto Colorizer
 
-`Manga Auto Colorizer` is a Windows local desktop app for black-and-white manga auto colorization and reader-mode browsing. The current mainline is `Electron + React + Vite + FastAPI`, and the color model remains `external/manga-colorization-v2`.
+Windows 本地漫画阅读与自动上色工具。导入本地漫画后，可以在阅读器里按页查看黑白原图和彩色结果，并导出完整 PDF。
 
-## Current scope
+> 当前目标是先做好 1.0 免费开源初代产品：能安装、能导入、能阅读、能上色、能导出、能反馈 Bug。2.0 会基于真实用户反馈继续开发。
 
-- Auto-only colorization
-- Local reader mode
-- Local inputs only: image folders, PDF, CBZ
-- No reference mode
-- No MangaNinjia
-- No ComfyUI_MangaNinjia
-- No browser extension
-- No cloud upload
+## 项目地址
 
-## Environment
+- GitHub: https://github.com/honsoncn-stack/Manga-Colorizer-
+- Bug 反馈: https://github.com/honsoncn-stack/Manga-Colorizer-/issues
 
-- Project root: `D:\AIProjects\manga-auto-colorizer`
-- Conda env: `D:\CondaEnvs\manga-color-v2`
-- Python: `D:\CondaEnvs\manga-color-v2\python.exe`
+如果这个项目帮到了你，欢迎点一个 Star。
 
-## Desktop app
+## 主要功能
 
-Recommended entry:
+- 本地书库：导入图片文件夹、PDF、CBZ。
+- 本地阅读器：单页阅读、页码跳转、缩放、黑白/彩色切换。
+- 自动上色：支持当前页、后续页、整本书上色。
+- 上色队列：查看当前任务、成功页、失败页和运行记录。
+- 图库预览：分页查看临时彩图和书库彩页。
+- PDF 导出：已上色页使用彩图，未上色页自动用黑白原图补齐。
+- 本地隐私：漫画文件、彩图缓存和导出结果都保存在本机。
+
+## 当前不做
+
+- 不做 reference 模式。
+- 不接 MangaNinjia。
+- 不接 ComfyUI_MangaNinjia。
+- 不做浏览器插件。
+- 不上传到云端。
+- 不在源码仓库里提供模型权重、用户漫画、输出图或安装包。
+
+## 运行环境
+
+当前开发环境默认使用 D 盘路径：
+
+```text
+D:\AIProjects\manga-auto-colorizer
+D:\CondaEnvs\manga-color-v2
+```
+
+桌面端主线：
+
+```text
+desktop/electron/   Electron 主进程
+desktop/frontend/   React + Vite 前端
+desktop/backend/    FastAPI 后端
+scripts/            导入、上色、导出、打包和环境脚本
+docs/               用户文档和发布说明
+```
+
+## 启动开发版
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File scripts\launch_desktop_dev.ps1
 ```
 
-Packaged app entry:
+创建开发版桌面快捷方式：
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File scripts\launch_packaged_app.ps1
+powershell -ExecutionPolicy Bypass -File scripts\create_dev_desktop_shortcut.ps1
 ```
 
-Desktop app structure:
+## 打包
 
-- `desktop/electron/` - Electron main process and preload bridge
-- `desktop/frontend/` - React + Vite UI
-- `desktop/backend/` - FastAPI backend
-
-## Reader mode
-
-Reader mode turns the app into a local manga bookshelf and reader instead of a browser-dependent plugin.
-
-- Import image folders
-- Import PDF
-- Import CBZ
-- Read black-and-white pages locally
-- Colorize the current page, next 5 pages, or the whole book
-- Export mixed color/BW PDF per imported book
-
-### Library storage
-
-- Library root: `library/`
-- Book storage: `library/books/`
-- Library index: `library/library_index.json`
-
-User-imported books and generated book caches are not committed to Git.
-
-## Reader mode workflow
-
-1. Open the desktop app.
-2. Go to `Library`.
-3. Import a local image folder, PDF, or CBZ.
-4. Open the imported book in `Reader`.
-5. Colorize the current page or a page range.
-6. Export `colorized_book.pdf` from the book's `export/` folder.
-
-## Reader UX and Gallery performance
-
-The current desktop reader includes these usability and performance optimizations:
-
-- `Gallery` uses pagination instead of rendering all images at once.
-- Default gallery page size is `24`.
-- Page sizes can be switched between `12 / 24 / 48 / 96`.
-- Gallery thumbnails prefer `thumb_url`, and images use lazy loading.
-- `Reader` supports keyboard shortcuts:
-  - `ArrowRight`
-  - `ArrowLeft`
-  - `Space`
-  - `B`
-  - `C`
-- `Reader` supports black-and-white / color toggle.
-- `Library` supports title search and sorting.
-
-Reader-mode cached color pages are stored under:
-
-- `library/books/<book_id>/pages_color`
-
-## CLI utilities
-
-Import a folder into the local library:
-
-```powershell
-conda activate D:\CondaEnvs\manga-color-v2
-python scripts/library_manager.py import-folder --input input/pages_bw --title "Demo Book"
-```
-
-Import a PDF:
-
-```powershell
-python scripts/library_manager.py import-pdf --input input/pdf/chapter01.pdf --title "Demo PDF"
-```
-
-Import a CBZ:
-
-```powershell
-python scripts/library_manager.py import-cbz --input input/cbz/demo.cbz --title "Demo CBZ"
-```
-
-Colorize one page from a book:
-
-```powershell
-python scripts/colorize_book_page.py --book-id book_001 --page 1
-```
-
-Colorize a range:
-
-```powershell
-python scripts/colorize_book_batch.py --book-id book_001 --start-page 3 --end-page 8
-```
-
-Export a reader book PDF:
-
-```powershell
-python scripts/export_book_pdf.py --book-id book_001
-```
-
-## Legacy pipeline mode
-
-The original pipeline is still available for folder/PDF batch colorization:
-
-```powershell
-conda activate D:\CondaEnvs\manga-color-v2
-python scripts/pipeline.py --input input/pages_bw
-python scripts/pipeline.py --input input/pdf/chapter01.pdf
-```
-
-## Phase 2: art and interaction
-
-The desktop UI now includes:
-
-- Dashboard
-- Library
-- Reader
-- Colorize Queue
-- Gallery
-- Logs
-- Settings
-- About
-
-Features already in the desktop UI:
-
-- Reader bookshelf
-- Drag-and-pick local imports
-- Progress feedback
-- Reader queue log
-- Image preview
-- Output gallery
-
-## Phase 3: packaging and release
-
-Build installer and portable package:
+构建安装包和便携版：
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File scripts\build_desktop_installer.ps1
 ```
 
-Create desktop shortcut:
+输出目录：
 
-```powershell
-powershell -ExecutionPolicy Bypass -File scripts\create_desktop_shortcut.ps1
+```text
+desktop/release/
 ```
 
-Build output directory:
+`desktop/release/` 不提交到源码仓库。公开分发时，请把安装包上传到 GitHub Release。
 
-- `desktop/release/`
+## 使用流程
 
-Notes:
+1. 打开应用。
+2. 进入「书库」。
+3. 导入图片文件夹、PDF 或 CBZ。
+4. 点击「继续阅读」。
+5. 在「阅读器」里上色当前页、后续几页或整本书。
+6. 点击「导出完整 PDF」。
+7. 在「图库」或书籍 `export` 目录中找到导出的 PDF。
 
-- The installer does not bundle model weights.
-- The installer does not bundle the conda environment.
-- The packaged app still depends on `D:\AIProjects\manga-auto-colorizer`.
-- The packaged app still depends on `D:\CondaEnvs\manga-color-v2`.
+导出路径示例：
 
-## Documents
+```text
+library/books/<book_id>/export/colorized_book.pdf
+```
 
-- `docs/READER_MODE_PLAN.md`
-- `docs/READER_USER_GUIDE.md`
-- `docs/PACKAGING_DESKTOP.md`
-- `docs/RELEASE_CHECKLIST.md`
+## 快捷键
 
-## Git rules
+阅读器支持：
 
-Do not commit:
+- `ArrowRight` / `Space`: 下一页
+- `ArrowLeft`: 上一页
+- `B`: 切换黑白 / 彩色
+- `C`: 上色当前页
+- 页码输入框里按 `Enter`: 跳转
+
+## Bug 反馈
+
+如果遇到问题：
+
+1. 打开应用里的「记录」页面。
+2. 复制相关错误记录。
+3. 到 GitHub Issues 提交 Bug：
+   https://github.com/honsoncn-stack/Manga-Colorizer-/issues
+
+请不要上传受版权保护的漫画原图、整本 PDF、模型权重或个人隐私文件。
+
+## 文档
+
+- [普通用户使用指南](docs/PUBLIC_USER_GUIDE.md)
+- [公开版安装与环境配置](docs/PUBLIC_INSTALLATION.md)
+- [1.0 开源发布说明](docs/OPEN_SOURCE_1_0.md)
+- [反馈与 2.0 路线](docs/FEEDBACK_AND_ROADMAP.md)
+- [仓库结构说明](docs/REPOSITORY_STRUCTURE.md)
+- [反馈与贡献](CONTRIBUTING.md)
+- [桌面端打包说明](docs/PACKAGING_DESKTOP.md)
+- [发布检查清单](docs/RELEASE_CHECKLIST.md)
+
+## 仓库不包含什么
+
+这些内容不应提交到 Git：
 
 - `library/books/`
 - `library/library_index.json`
@@ -204,5 +138,19 @@ Do not commit:
 - `reports/`
 - `node_modules/`
 - `dist/`
+- `build/`
 - `release/`
-- model weights
+- `desktop/release/`
+- `*.exe`
+- `*.msi`
+- 模型权重和模型解包文件
+
+## 许可证说明
+
+本项目计划免费开源分享。正式 1.0 Release 前，需要进一步核对外部模型、第三方代码和权重文件的许可证边界。
+
+源码仓库不会提交模型权重；外部模型和第三方依赖遵循各自项目的许可证。
+
+## 开发者
+
+Ray的练琴时光（全平台同名）
