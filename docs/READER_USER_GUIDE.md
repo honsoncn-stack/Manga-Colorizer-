@@ -4,7 +4,7 @@
 
 1. Open the desktop app.
 2. Go to `Library`.
-3. Enter a title.
+3. Enter a title, or let the app auto-fill it from the selected PDF / CBZ file name.
 4. Choose one of:
    - image folder
    - PDF
@@ -12,6 +12,23 @@
 5. Click the matching import button.
 
 The book appears on the local bookshelf.
+
+## Search and sort the bookshelf
+
+In `Library`, you can:
+
+- search by title
+- sort by:
+  - recently updated
+  - recently imported
+  - title
+
+Each book card shows:
+
+- total pages
+- current reading page
+- colorized page count
+- a progress bar for colorization
 
 ## Read pages
 
@@ -22,14 +39,25 @@ The book appears on the local bookshelf.
    - `上一页`
    - `下一页`
    - page jump input
-   - BW/color toggle
+   - BW / color toggle
    - zoom controls
+
+## Reader shortcuts
+
+The reader supports:
+
+- `ArrowRight`: next page
+- `ArrowLeft`: previous page
+- `Space`: next page
+- `B`: toggle BW / color
+- `C`: colorize current page
+- `Enter` in the page input: jump to page
 
 ## Colorize the current page
 
 In `Reader`, click `上色当前页`.
 
-If model weights are missing, the button remains visible but the environment state shows that weights are missing.
+If model weights are missing, the button remains visible but the UI clearly reports that weights are missing and colorization cannot start.
 
 ## Colorize multiple pages
 
@@ -53,14 +81,42 @@ Output path:
 
 If some pages are not colorized yet, export uses the BW page as fallback for those pages.
 
+## Browse the gallery
+
+`Gallery` now uses pagination to stay responsive when many images exist.
+
+- default page size: `24`
+- selectable page sizes:
+  - `12`
+  - `24`
+  - `48`
+  - `96`
+
+You can switch between:
+
+- `流水线输出`
+- `书库彩页输出`
+
+Reader library outputs can also be filtered by book.
+
 ## View logs
 
 Open `Logs` to inspect:
 
-- `Pipeline Log`
-- `Error Log`
-- `Backend Log`
-- `Reader Log`
+- `流水线日志`
+- `错误日志`
+- `后端日志`
+- `阅读器日志`
+
+If a log file does not exist yet, the page shows `暂无日志` instead of failing.
+
+## Local cache and Git
+
+Reader-mode outputs are cached under:
+
+- `library/books/<book_id>/pages_color`
+
+User-imported books and generated caches are local-only and must not be committed to Git.
 
 ## Common issues
 

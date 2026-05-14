@@ -67,6 +67,27 @@ User-imported books and generated book caches are not committed to Git.
 5. Colorize the current page or a page range.
 6. Export `colorized_book.pdf` from the book's `export/` folder.
 
+## Reader UX and Gallery performance
+
+The current desktop reader includes these usability and performance optimizations:
+
+- `Gallery` uses pagination instead of rendering all images at once.
+- Default gallery page size is `24`.
+- Page sizes can be switched between `12 / 24 / 48 / 96`.
+- Gallery thumbnails prefer `thumb_url`, and images use lazy loading.
+- `Reader` supports keyboard shortcuts:
+  - `ArrowRight`
+  - `ArrowLeft`
+  - `Space`
+  - `B`
+  - `C`
+- `Reader` supports black-and-white / color toggle.
+- `Library` supports title search and sorting.
+
+Reader-mode cached color pages are stored under:
+
+- `library/books/<book_id>/pages_color`
+
 ## CLI utilities
 
 Import a folder into the local library:

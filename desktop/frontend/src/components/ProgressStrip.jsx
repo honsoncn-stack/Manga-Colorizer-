@@ -9,7 +9,7 @@ const DEFAULT_ALIASES = {
   "Quality Check": "质量检查",
   "Exporting PDF": "导出 PDF",
   Done: "完成",
-  Failed: "失败"
+  Failed: "失败",
 };
 
 const READER_ALIASES = {
@@ -17,7 +17,7 @@ const READER_ALIASES = {
   Preparing: "准备中",
   Colorizing: "上色中",
   Done: "完成",
-  Failed: "失败"
+  Failed: "失败",
 };
 
 export default function ProgressStrip({
@@ -26,7 +26,7 @@ export default function ProgressStrip({
   progress = 0,
   message = "",
   stages = DEFAULT_STAGES,
-  aliases = DEFAULT_ALIASES
+  aliases = DEFAULT_ALIASES,
 }) {
   const normalizedStep = aliases[String(currentStep)] || String(currentStep);
   const activeIndex = stages.findIndex((stage) => stage === normalizedStep);

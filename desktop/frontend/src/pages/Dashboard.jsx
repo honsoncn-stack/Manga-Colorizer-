@@ -1,17 +1,17 @@
 import { BookOpen, Library, ScrollText } from "lucide-react";
 import ActionButton from "../components/ActionButton";
+import BookCover from "../components/BookCover";
 import MangaCard from "../components/MangaCard";
 import StatusBadge from "../components/StatusBadge";
 
-export default function Dashboard({ env, projectStatus, jobStatus, readerJobStatus, libraryBooks, onNavigate, onContinueReading }) {
+export default function Dashboard({ env, projectStatus, readerJobStatus, libraryBooks, onNavigate, onContinueReading }) {
   const recentBook = projectStatus?.recentBook || libraryBooks?.[0] || null;
-  const queueRunning = readerJobStatus?.running;
   const statCards = [
     { label: "Python", value: env?.pythonPathOk ? "已匹配" : "待检查", tone: env?.pythonPathOk ? "ok" : "warn" },
     { label: "CUDA", value: env?.cudaAvailable ? "可用" : "CPU", tone: env?.cudaAvailable ? "ok" : "warn" },
     { label: "模型", value: env?.weightsReady ? "已就绪" : "缺失", tone: env?.weightsReady ? "ok" : "missing" },
     { label: "书库数量", value: `${projectStatus?.libraryBookCount ?? 0} 本`, tone: "neutral" },
-    { label: "最近输出", value: `${projectStatus?.recentOutputCount ?? 0} 页`, tone: "neutral" }
+    { label: "最近输出", value: `${projectStatus?.recentOutputCount ?? 0} 页`, tone: "neutral" },
   ];
 
   return (
@@ -51,14 +51,10 @@ export default function Dashboard({ env, projectStatus, jobStatus, readerJobStat
       </div>
 
       <div className="two-column-grid">
-        <MangaCard
-          title="最近书籍"
-          subtitle="继续当前阅读进度"
-          actions={<BookOpen size={18} aria-hidden="true" />}
-        >
+        <MangaCard title="最近书籍" subtitle="继续当前阅读进度" actions={<BookOpen size={18} aria-hidden="true" />}>
           {recentBook ? (
             <div className="recent-book-panel">
-              {recentBook.cover_url ? <img src={recentBook.cover_url} alt={recentBook.title} className="recent-book-cover" /> : null}
+              <BookCover src={recentBook.cover_url} title={recentBook.title} className="recent-book-cover" />
               <div className="recent-book-copy">
                 <div className="recent-book-title">{recentBook.title}</div>
                 <div className="recent-book-meta">页数 {recentBook.total_pages} · 当前第 {recentBook.current_page} 页</div>
@@ -70,7 +66,7 @@ export default function Dashboard({ env, projectStatus, jobStatus, readerJobStat
           )}
         </MangaCard>
 
-        <MangaCard title="入口导航" subtitle="旧工具输出与运维页面">
+        <MangaCard title="入口导航" subtitle="快速跳转到常用页面">
           <div className="dashboard-shortcuts">
             <button type="button" className="dashboard-shortcut" onClick={() => onNavigate("library")}>
               <Library size={18} />

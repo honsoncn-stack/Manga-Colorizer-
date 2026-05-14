@@ -9,14 +9,11 @@ import Gallery from "./pages/Gallery";
 import Logs from "./pages/Logs";
 import Settings from "./pages/Settings";
 import About from "./pages/About";
-import ImagePreviewModal from "./components/ImagePreviewModal";
-import ConfirmDialog from "./components/ConfirmDialog";
 import { LAST_READER_BOOK_KEY, pickPreferredReaderBook } from "./lib/readerState";
 import {
   cleanOutputs,
   clearLibraryCache,
   colorizeLibraryRange,
-  deleteFile,
   deleteLibraryBook,
   exportLibraryPdf,
   getEnv,
@@ -26,34 +23,36 @@ import {
   getLibraryJobStatus,
   getLogs,
   getProjectStatus,
-  getResults,
   importLibraryCbz,
   importLibraryFolder,
   importLibraryPdf,
-  openFolder
+  openFolder,
 } from "./lib/api";
 
 const pageMeta = {
-  dashboard: { title: "Manga Workbench Dashboard", subtitle: "阅读器、书库和自动上色状态总览" },
-  library: { title: "Local Manga Library", subtitle: "导入本地漫画并生成阅读缓存" },
-  reader: { title: "Reader Workbench", subtitle: "本地单页阅读、上色与导出" },
-  queue: { title: "Colorize Queue", subtitle: "阅读器上色任务、等待队列与 reader_colorize.log" },
-  gallery: { title: "Colorized Gallery", subtitle: "旧流水线输出与阅读器彩色页预览" },
-  logs: { title: "Mission Logs", subtitle: "查看流水线、阅读器与后端日志" },
-  settings: { title: "Workbench Settings", subtitle: "路径、缓存和阅读偏好" },
-  about: { title: "About Reader Mode", subtitle: "阅读器模式范围与当前版本说明" }
+  dashboard: { title: "阅读器总览", subtitle: "查看书库、阅读进度与自动上色状态" },
+  library: { title: "本地书库", subtitle: "导入本地漫画并生成阅读缓存" },
+  reader: { title: "阅读器", subtitle: "本地单页阅读、上色与导出" },
+  queue: { title: "上色队列", subtitle: "查看阅读器上色任务、等待队列与日志" },
+  gallery: { title: "彩图预览", subtitle: "分页查看流水线输出和书库彩页" },
+  logs: { title: "运行日志", subtitle: "查看流水线、阅读器与后端日志" },
+  settings: { title: "设置", subtitle: "管理路径、缓存和阅读偏好" },
+  about: { title: "关于阅读器模式", subtitle: "查看当前版本说明与使用范围" },
 };
 
 const DEFAULT_READER_SETTINGS = {
   readingDirection: "rtl",
-  defaultZoom: "fit-width",
-  autoPrefetchNextPages: false
+  defaultZoom: "fit-height",
+  autoPrefetchNextPages: false,
 };
 
 function loadReaderSettings() {
   try {
     const raw = window.localStorage.getItem("reader-settings");
-    return raw ? { ...DEFAULT_READER_SETTINGS, ...JSON.parse(raw) } : DEFAULT_READER_SETTINGS;
+    if (!raw) {
+      return DEFAULT_READER_SETTINGS;
+    }
+    return { ...DEFAULT_READER_SETTINGS, ...JSON.parse(raw) };
   } catch {
     return DEFAULT_READER_SETTINGS;
   }
@@ -65,7 +64,6 @@ export default function App() {
   const [env, setEnv] = useState(null);
   const [projectStatus, setProjectStatus] = useState(null);
   const [logs, setLogs] = useState(null);
-  const [results, setResults] = useState(null);
   const [jobStatus, setJobStatus] = useState(null);
   const [libraryJobStatus, setLibraryJobStatus] = useState(null);
   const [libraryBooks, setLibraryBooks] = useState([]);
@@ -73,25 +71,22 @@ export default function App() {
   const [currentBookId, setCurrentBookId] = useState(() => window.localStorage.getItem("reader-current-book") || "");
   const [readerSettings, setReaderSettings] = useState(loadReaderSettings);
   const [readerRestoreState, setReaderRestoreState] = useState({ status: "idle", message: "", error: "" });
-  const [previewItem, setPreviewItem] = useState(null);
-  const [deleteItem, setDeleteItem] = useState(null);
 
   const loadAll = async () => {
-    const [healthData, envData, statusData, logsData, resultsData, jobData, booksData, readerJobData] = await Promise.all([
+    const [healthData, envData, statusData, logsData, jobData, booksData, readerJobData] = await Promise.all([
       getHealth().catch(() => null),
       getEnv().catch(() => null),
       getProjectStatus().catch(() => null),
       getLogs().catch(() => null),
-      getResults().catch(() => null),
       getJobStatus().catch(() => null),
       getLibraryBooks().catch(() => ({ books: [] })),
-      getLibraryJobStatus().catch(() => null)
+      getLibraryJobStatus().catch(() => null),
     ]);
+
     setHealth(healthData);
     setEnv(envData);
     setProjectStatus(statusData);
     setLogs(logsData);
-    setResults(resultsData);
     setJobStatus(jobData);
     setLibraryBooks(booksData?.books || []);
     setLibraryLoaded(true);
@@ -123,19 +118,23 @@ export default function App() {
     if (currentPage !== "reader") {
       return;
     }
+
     const hasCurrentBook = currentBookId && libraryBooks.some((book) => book?.book_id === currentBookId);
     if (hasCurrentBook) {
       setReaderRestoreState((state) => (state.status === "loading" ? { status: "ready", message: "", error: "" } : state));
       return;
     }
+
     if (!libraryLoaded) {
       setReaderRestoreState({ status: "loading", message: "", error: "" });
       return;
     }
+
     if (!libraryBooks.length) {
       setReaderRestoreState({ status: "empty", message: "", error: "" });
       return;
     }
+
     try {
       const preferredBookId = window.localStorage.getItem(LAST_READER_BOOK_KEY) || "";
       const preferredBook = pickPreferredReaderBook(libraryBooks, preferredBookId);
@@ -147,21 +146,17 @@ export default function App() {
       setReaderRestoreState({
         status: "ready",
         message: `已恢复最近阅读：${preferredBook.title}`,
-        error: ""
+        error: "",
       });
     } catch (error) {
       console.error(error);
       setReaderRestoreState({
         status: "error",
         message: "",
-        error: error instanceof Error ? error.message : "恢复最近阅读失败。"
+        error: error instanceof Error ? error.message : "恢复最近阅读失败。",
       });
     }
   }, [currentPage, currentBookId, libraryBooks, libraryLoaded]);
-
-  const refreshEnv = async () => {
-    await loadAll();
-  };
 
   const openReaderForBook = (bookId) => {
     if (!bookId) {
@@ -172,26 +167,7 @@ export default function App() {
     setCurrentPage("reader");
   };
 
-  const handleImport = async (handler, payload) => {
-    await handler(payload);
-    await loadAll();
-  };
-
-  const handleDeleteGalleryItem = (item) => {
-    setDeleteItem(item);
-  };
-
-  const confirmDeleteGalleryItem = async () => {
-    if (!deleteItem) {
-      return;
-    }
-    await deleteFile(deleteItem.path);
-    setPreviewItem(null);
-    setDeleteItem(null);
-    await loadAll();
-  };
-
-  const page = pageMeta[currentPage];
+  const page = pageMeta[currentPage] || pageMeta.dashboard;
   let content = null;
 
   if (currentPage === "dashboard") {
@@ -210,9 +186,18 @@ export default function App() {
     content = (
       <Library
         books={libraryBooks}
-        onImportFolder={(payload) => handleImport(importLibraryFolder, payload)}
-        onImportPdf={(payload) => handleImport(importLibraryPdf, payload)}
-        onImportCbz={(payload) => handleImport(importLibraryCbz, payload)}
+        onImportFolder={async (payload) => {
+          await importLibraryFolder(payload);
+          await loadAll();
+        }}
+        onImportPdf={async (payload) => {
+          await importLibraryPdf(payload);
+          await loadAll();
+        }}
+        onImportCbz={async (payload) => {
+          await importLibraryCbz(payload);
+          await loadAll();
+        }}
         onContinueReading={openReaderForBook}
         onColorizeAll={async (bookId) => {
           await colorizeLibraryRange(bookId);
@@ -251,9 +236,9 @@ export default function App() {
       />
     );
   } else if (currentPage === "queue") {
-    content = <ColorizeQueue readerJobStatus={libraryJobStatus} logs={logs} />;
+    content = <ColorizeQueue readerJobStatus={libraryJobStatus} logs={logs} books={libraryBooks} onRefresh={loadAll} />;
   } else if (currentPage === "gallery") {
-    content = <Gallery results={results} onOpenFolder={openFolder} onPreview={setPreviewItem} onDelete={handleDeleteGalleryItem} />;
+    content = <Gallery libraryBooks={libraryBooks} onOpenFolder={openFolder} />;
   } else if (currentPage === "logs") {
     content = <Logs logs={logs} onRefresh={loadAll} />;
   } else if (currentPage === "settings") {
@@ -267,7 +252,7 @@ export default function App() {
           await cleanOutputs();
           await loadAll();
         }}
-        onRefreshEnv={refreshEnv}
+        onRefreshEnv={loadAll}
         onOpenProjectFolder={() => openFolder("D:\\AIProjects\\manga-auto-colorizer")}
         onOpenLibraryFolder={() => openFolder("library")}
         onClearLibraryCache={async () => {
@@ -284,15 +269,7 @@ export default function App() {
     <div className="app-shell">
       <Sidebar currentPage={currentPage} onChange={setCurrentPage} />
       <main className="content-shell">
-        <TopBar
-          title={page.title}
-          subtitle={page.subtitle}
-          env={env}
-          health={health}
-          jobStatus={jobStatus}
-          readerJobStatus={libraryJobStatus}
-          onRefresh={loadAll}
-        />
+        <TopBar title={page.title} subtitle={page.subtitle} onRefresh={loadAll} />
         <div className="content-scroll">{content}</div>
         <footer className="footer-strip">
           <span>后端：{health?.status || "未知"}</span>
@@ -300,17 +277,6 @@ export default function App() {
           <span>模式：本地阅读器 + 自动上色</span>
         </footer>
       </main>
-      <ImagePreviewModal item={previewItem} onClose={() => setPreviewItem(null)} />
-      {deleteItem ? (
-        <ConfirmDialog
-          title="确认删除"
-          message={`确定删除这张图片吗？\n\n${deleteItem.name}`}
-          confirmLabel="是，删除"
-          cancelLabel="否，保留"
-          onConfirm={confirmDeleteGalleryItem}
-          onCancel={() => setDeleteItem(null)}
-        />
-      ) : null}
     </div>
   );
 }

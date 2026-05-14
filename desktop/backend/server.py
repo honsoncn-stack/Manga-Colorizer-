@@ -13,6 +13,7 @@ from typing import Any
 import uvicorn
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from PIL import Image
 from pydantic import BaseModel
 from starlette.staticfiles import StaticFiles
 
@@ -54,6 +55,7 @@ OUTPUT_ROOT = PROJECT_ROOT / "output"
 OUTPUT_FIXED = OUTPUT_ROOT / "colorized_fixed"
 OUTPUT_FINAL_PDF = OUTPUT_ROOT / "final_pdf"
 OUTPUT_NEEDS_REVIEW = OUTPUT_ROOT / "needs_review"
+PIPELINE_THUMBS = OUTPUT_ROOT / "thumbs_gallery"
 ALLOWED_DELETE_ROOTS = (INPUT_PAGES, OUTPUT_FIXED, OUTPUT_NEEDS_REVIEW)
 PIPELINE_SCRIPT = PROJECT_ROOT / "scripts" / "pipeline.py"
 CLEAN_SCRIPT = PROJECT_ROOT / "scripts" / "clean_outputs.py"
@@ -69,6 +71,8 @@ DENOISER_WEIGHT = REPO_DIR / "denoising" / "models" / "net_rgb.pth"
 
 PIPELINE_LOG = PROJECT_ROOT / "logs" / "pipeline.log"
 ERROR_LOG = PROJECT_ROOT / "logs" / "error.log"
+GALLERY_DEFAULT_PAGE_SIZE = 24
+GALLERY_MAX_PAGE_SIZE = 100
 
 PIPELINE_STEPS = [
     ("Waiting", 0),
@@ -550,8 +554,101 @@ def list_pdfs() -> list[dict[str, str]]:
     return pdfs
 
 
+def normalize_page_size(page_size: int | None) -> int:
+    value = int(page_size or GALLERY_DEFAULT_PAGE_SIZE)
+    if value < 1:
+        return GALLERY_DEFAULT_PAGE_SIZE
+    return min(value, GALLERY_MAX_PAGE_SIZE)
+
+
+def normalize_page_number(page: int | None) -> int:
+    value = int(page or 1)
+    return value if value > 0 else 1
+
+
+def paginate_items(items: list[dict[str, Any]], page: int | None, page_size: int | None) -> dict[str, Any]:
+    normalized_page = normalize_page_number(page)
+    normalized_page_size = normalize_page_size(page_size)
+    total = len(items)
+    total_pages = max((total + normalized_page_size - 1) // normalized_page_size, 1)
+    current_page = min(normalized_page, total_pages)
+    start = (current_page - 1) * normalized_page_size
+    end = start + normalized_page_size
+    return {
+        "items": items[start:end],
+        "page": current_page,
+        "page_size": normalized_page_size,
+        "total": total,
+        "total_pages": total_pages,
+        "has_prev": current_page > 1,
+        "has_next": current_page < total_pages,
+    }
+
+
+def ensure_thumbnail(source_path: Path, thumb_path: Path, *, width: int = 320) -> Path | None:
+    try:
+        if thumb_path.exists() and thumb_path.stat().st_mtime >= source_path.stat().st_mtime:
+            return thumb_path
+        thumb_path.parent.mkdir(parents=True, exist_ok=True)
+        with Image.open(source_path) as image:
+            rgb_image = image.convert("RGB")
+            if rgb_image.width > width:
+                height = max(1, int(rgb_image.height * (width / rgb_image.width)))
+                rgb_image = rgb_image.resize((width, height))
+            rgb_image.save(thumb_path, format="JPEG", quality=85, optimize=True)
+        return thumb_path
+    except Exception:  # noqa: BLE001
+        return None
+
+
+def build_pipeline_gallery_item(image_path: Path) -> dict[str, Any]:
+    thumb_path = ensure_thumbnail(image_path, PIPELINE_THUMBS / f"{image_path.stem}.jpg")
+    return {
+        "id": f"pipeline-{image_path.name}",
+        "book_id": None,
+        "book_title": None,
+        "page_number": None,
+        "filename": image_path.name,
+        "image_url": f"{APP_BASE_URL}/media/output/colorized_fixed/{image_path.name}",
+        "thumb_url": f"{APP_BASE_URL}/media/output/thumbs_gallery/{thumb_path.name}" if thumb_path and thumb_path.exists() else f"{APP_BASE_URL}/media/output/colorized_fixed/{image_path.name}",
+        "source": "pipeline",
+        "is_colorized": True,
+        "file_path": str(image_path),
+        "folder_path": str(image_path.parent),
+        "caption": image_path.name,
+    }
+
+
+def build_library_gallery_item(book_id: str, manifest: dict[str, Any], page_number: int) -> dict[str, Any] | None:
+    image_path = manifest_page_path(book_id, page_number, color=True)
+    if not image_path.exists():
+        return None
+    thumb_path = ensure_thumbnail(image_path, book_root(book_id) / "thumbnails" / "color" / f"{image_path.stem}.jpg")
+    return {
+        "id": f"library-{book_id}-{page_number:03d}",
+        "book_id": book_id,
+        "book_title": manifest.get("title", book_id),
+        "page_number": page_number,
+        "filename": image_path.name,
+        "image_url": f"{APP_BASE_URL}/media/library/{book_id}/pages_color/{image_path.name}",
+        "thumb_url": f"{APP_BASE_URL}/media/library/{book_id}/thumbnails/color/{thumb_path.name}" if thumb_path and thumb_path.exists() else f"{APP_BASE_URL}/media/library/{book_id}/pages_color/{image_path.name}",
+        "source": "library",
+        "is_colorized": True,
+        "file_path": str(image_path),
+        "folder_path": str(image_path.parent),
+        "caption": f"{manifest.get('title', book_id)} · 第 {page_number} 页",
+    }
+
+
 def list_library_books() -> list[dict[str, Any]]:
-    return load_library_index().get("books", [])
+    books = []
+    for book in load_library_index().get("books", []):
+        item = dict(book)
+        cover_url = item.get("cover_url")
+        if cover_url and str(cover_url).startswith("/"):
+            item["cover_url"] = f"{APP_BASE_URL}{cover_url}"
+        books.append(item)
+    return books
 
 
 def list_library_outputs() -> list[dict[str, Any]]:
@@ -564,20 +661,60 @@ def list_library_outputs() -> list[dict[str, Any]]:
             continue
         total_pages = int(manifest.get("total_pages", 0))
         for page_number in range(1, total_pages + 1):
-            page_path = manifest_page_path(book_id, page_number, color=True)
-            if not page_path.exists():
-                continue
-            outputs.append(
-                {
-                    "bookId": book_id,
-                    "bookTitle": manifest.get("title", book_id),
-                    "pageNumber": page_number,
-                    "name": page_path.name,
-                    "path": str(page_path),
-                    "previewUrl": f"{APP_BASE_URL}/media/library/{book_id}/pages_color/{page_path.name}",
-                }
-            )
+            item = build_library_gallery_item(book_id, manifest, page_number)
+            if item:
+                outputs.append(
+                    {
+                        "bookId": item["book_id"],
+                        "bookTitle": item["book_title"],
+                        "pageNumber": item["page_number"],
+                        "name": item["filename"],
+                        "path": item["file_path"],
+                        "previewUrl": item["image_url"],
+                        "thumbUrl": item["thumb_url"],
+                    }
+                )
     return outputs
+
+
+def get_library_gallery_source(book_id: str | None, *, only_colorized: bool = True) -> tuple[str | None, list[dict[str, Any]]]:
+    books = list_library_books()
+    if not books:
+        return None, []
+
+    selected_book_id = book_id or str(books[0]["book_id"])
+    try:
+        manifest = load_manifest(selected_book_id)
+    except FileNotFoundError:
+        return None, []
+
+    total_pages = int(manifest.get("total_pages", 0))
+    items: list[dict[str, Any]] = []
+    for page_number in range(1, total_pages + 1):
+        item = build_library_gallery_item(selected_book_id, manifest, page_number)
+        if item:
+            items.append(item)
+        elif not only_colorized:
+            bw_path = manifest_page_path(selected_book_id, page_number, color=False)
+            if bw_path.exists():
+                thumb_path = ensure_thumbnail(bw_path, book_root(selected_book_id) / "thumbnails" / "bw" / f"{bw_path.stem}.jpg")
+                items.append(
+                    {
+                        "id": f"library-bw-{selected_book_id}-{page_number:03d}",
+                        "book_id": selected_book_id,
+                        "book_title": manifest.get("title", selected_book_id),
+                        "page_number": page_number,
+                        "filename": bw_path.name,
+                        "image_url": f"{APP_BASE_URL}/media/library/{selected_book_id}/pages_bw/{bw_path.name}",
+                        "thumb_url": f"{APP_BASE_URL}/media/library/{selected_book_id}/thumbnails/bw/{thumb_path.name}" if thumb_path and thumb_path.exists() else f"{APP_BASE_URL}/media/library/{selected_book_id}/pages_bw/{bw_path.name}",
+                        "source": "library",
+                        "is_colorized": False,
+                        "file_path": str(bw_path),
+                        "folder_path": str(bw_path.parent),
+                        "caption": f"{manifest.get('title', selected_book_id)} · 第 {page_number} 页",
+                    }
+                )
+    return selected_book_id, items
 
 
 def get_recent_book() -> dict[str, Any] | None:
@@ -656,6 +793,38 @@ def api_results() -> dict[str, object]:
         "needsReviewCount": len(list(OUTPUT_NEEDS_REVIEW.glob("*"))) if OUTPUT_NEEDS_REVIEW.exists() else 0,
         "libraryOutputs": list_library_outputs(),
     }
+
+
+@app.get("/api/gallery/pipeline")
+def api_gallery_pipeline(page: int = 1, page_size: int = GALLERY_DEFAULT_PAGE_SIZE) -> dict[str, object]:
+    items = [build_pipeline_gallery_item(image_path) for image_path in sorted(OUTPUT_FIXED.glob("*.png"))] if OUTPUT_FIXED.exists() else []
+    return paginate_items(items, page, page_size)
+
+
+@app.get("/api/gallery/library")
+def api_gallery_library(
+    page: int = 1,
+    page_size: int = GALLERY_DEFAULT_PAGE_SIZE,
+    book_id: str | None = None,
+    only_colorized: bool = True,
+) -> dict[str, object]:
+    selected_book_id, items = get_library_gallery_source(book_id, only_colorized=only_colorized)
+    payload = paginate_items(items, page, page_size)
+    payload["selected_book_id"] = selected_book_id
+    return payload
+
+
+@app.get("/api/gallery/book/{book_id}")
+def api_gallery_book(
+    book_id: str,
+    page: int = 1,
+    page_size: int = GALLERY_DEFAULT_PAGE_SIZE,
+    only_colorized: bool = True,
+) -> dict[str, object]:
+    selected_book_id, items = get_library_gallery_source(book_id, only_colorized=only_colorized)
+    payload = paginate_items(items, page, page_size)
+    payload["selected_book_id"] = selected_book_id
+    return payload
 
 
 @app.get("/api/job-status")
@@ -766,7 +935,11 @@ def api_library_import_cbz(payload: ImportBookRequest) -> dict[str, object]:
 @app.get("/api/library/book/{book_id}")
 def api_library_book(book_id: str) -> dict[str, object]:
     manifest = get_manifest_or_404(book_id)
-    manifest["cover_url"] = f"/media/library/{book_id}/thumbnails/001.png" if (book_root(book_id) / "thumbnails" / "001.png").exists() else None
+    manifest["cover_url"] = (
+        f"{APP_BASE_URL}/media/library/{book_id}/thumbnails/001.png"
+        if (book_root(book_id) / "thumbnails" / "001.png").exists()
+        else None
+    )
     return manifest
 
 

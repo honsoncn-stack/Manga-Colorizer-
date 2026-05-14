@@ -13,7 +13,7 @@ export default function Settings({
   onRefreshEnv,
   onOpenProjectFolder,
   onOpenLibraryFolder,
-  onClearLibraryCache
+  onClearLibraryCache,
 }) {
   return (
     <div className="page-stack">
@@ -21,12 +21,12 @@ export default function Settings({
         <div className="settings-grid">
           <PathField label="项目根目录" value={projectPaths.projectRoot} readOnly compact />
           <PathField label="Python 路径" value={projectPaths.pythonPath} readOnly compact />
-          <PathField label="Library Path" value={projectStatus?.libraryDir || projectPaths.libraryRoot} readOnly compact />
-          <PathField label="Input Pages Dir" value={projectStatus?.inputPagesDir || projectPaths.inputPages} readOnly compact />
-          <PathField label="Input PDF Dir" value={projectStatus?.inputPdfDir || projectPaths.inputPdf} readOnly compact />
-          <PathField label="Output Dir" value={projectStatus?.outputDir || projectPaths.outputRoot} readOnly compact />
-          <PathField label="Final PDF Dir" value={projectStatus?.outputFinalPdfDir || projectPaths.outputFinalPdf} readOnly compact />
-          <PathField label="Logs Dir" value={projectStatus?.logsDir || projectPaths.logsDir} readOnly compact />
+          <PathField label="书库路径" value={projectStatus?.libraryDir || projectPaths.libraryRoot} readOnly compact />
+          <PathField label="输入图片目录" value={projectStatus?.inputPagesDir || projectPaths.inputPages} readOnly compact />
+          <PathField label="输入 PDF 目录" value={projectStatus?.inputPdfDir || projectPaths.inputPdf} readOnly compact />
+          <PathField label="输出目录" value={projectStatus?.outputDir || projectPaths.outputRoot} readOnly compact />
+          <PathField label="最终 PDF 目录" value={projectStatus?.outputFinalPdfDir || projectPaths.outputFinalPdf} readOnly compact />
+          <PathField label="日志目录" value={projectStatus?.logsDir || projectPaths.logsDir} readOnly compact />
         </div>
       </MangaCard>
 
@@ -52,13 +52,13 @@ export default function Settings({
           <div className="field-group">
             <label className="field-label">默认缩放</label>
             <div className="button-row">
-              {["fit-width", "fit-height", "100%"].map((zoomValue) => (
+              {[{ value: "fit-width", label: "适合宽度" }, { value: "fit-height", label: "适合高度" }, { value: "100%", label: "原始比例" }].map((zoomOption) => (
                 <ActionButton
-                  key={zoomValue}
-                  variant={readerSettings.defaultZoom === zoomValue ? "secondary" : "ghost"}
-                  onClick={() => onReaderSettingsChange({ ...readerSettings, defaultZoom: zoomValue })}
+                  key={zoomOption.value}
+                  variant={readerSettings.defaultZoom === zoomOption.value ? "secondary" : "ghost"}
+                  onClick={() => onReaderSettingsChange({ ...readerSettings, defaultZoom: zoomOption.value })}
                 >
-                  {zoomValue}
+                  {zoomOption.label}
                 </ActionButton>
               ))}
             </div>

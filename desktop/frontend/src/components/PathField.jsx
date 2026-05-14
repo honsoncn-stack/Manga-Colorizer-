@@ -11,7 +11,7 @@ export default function PathField({
   readOnly = false,
   openTarget = "folder",
   compact = false,
-  allowOpen = true
+  allowOpen = true,
 }) {
   const handleCopy = async () => {
     if (value) {

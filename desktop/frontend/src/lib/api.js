@@ -39,6 +39,51 @@ export async function getResults() {
   return requestJson("/api/results");
 }
 
+export async function getGalleryPipeline(params = {}) {
+  const query = new URLSearchParams();
+  if (params.page) {
+    query.set("page", String(params.page));
+  }
+  if (params.pageSize) {
+    query.set("page_size", String(params.pageSize));
+  }
+  const suffix = query.toString() ? `?${query.toString()}` : "";
+  return requestJson(`/api/gallery/pipeline${suffix}`);
+}
+
+export async function getGalleryLibrary(params = {}) {
+  const query = new URLSearchParams();
+  if (params.page) {
+    query.set("page", String(params.page));
+  }
+  if (params.pageSize) {
+    query.set("page_size", String(params.pageSize));
+  }
+  if (params.bookId) {
+    query.set("book_id", String(params.bookId));
+  }
+  if (params.onlyColorized !== undefined) {
+    query.set("only_colorized", String(Boolean(params.onlyColorized)));
+  }
+  const suffix = query.toString() ? `?${query.toString()}` : "";
+  return requestJson(`/api/gallery/library${suffix}`);
+}
+
+export async function getGalleryBook(bookId, params = {}) {
+  const query = new URLSearchParams();
+  if (params.page) {
+    query.set("page", String(params.page));
+  }
+  if (params.pageSize) {
+    query.set("page_size", String(params.pageSize));
+  }
+  if (params.onlyColorized !== undefined) {
+    query.set("only_colorized", String(Boolean(params.onlyColorized)));
+  }
+  const suffix = query.toString() ? `?${query.toString()}` : "";
+  return requestJson(`/api/gallery/book/${bookId}${suffix}`);
+}
+
 export async function getJobStatus() {
   return requestJson("/api/job-status");
 }

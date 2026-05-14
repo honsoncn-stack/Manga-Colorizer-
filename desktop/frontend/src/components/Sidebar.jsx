@@ -9,7 +9,7 @@ const items = [
   { key: "gallery", label: "图库", hint: "输出预览", icon: Image },
   { key: "logs", label: "日志", hint: "后端与流水线", icon: ScrollText },
   { key: "settings", label: "设置", hint: "路径与阅读偏好", icon: FolderCog },
-  { key: "about", label: "关于", hint: "版本与说明", icon: Info }
+  { key: "about", label: "关于", hint: "版本与说明", icon: Info },
 ];
 
 export default function Sidebar({ currentPage, onChange }) {

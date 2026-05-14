@@ -4,10 +4,10 @@ import LogPanel from "../components/LogPanel";
 import MangaCard from "../components/MangaCard";
 
 const tabs = [
-  { key: "pipeline", label: "Pipeline Log" },
-  { key: "error", label: "Error Log" },
-  { key: "backend", label: "Backend Log" },
-  { key: "reader", label: "Reader Log" }
+  { key: "pipeline", label: "流水线日志" },
+  { key: "error", label: "错误日志" },
+  { key: "backend", label: "后端日志" },
+  { key: "reader", label: "阅读器日志" },
 ];
 
 export default function Logs({ logs, onRefresh }) {
@@ -26,7 +26,7 @@ export default function Logs({ logs, onRefresh }) {
   return (
     <div className="page-stack">
       <MangaCard
-        title="任务日志"
+        title="运行日志"
         subtitle="流水线、阅读器与后端日志都集中在这里。"
         actions={
           <ActionButton variant="ghost" hint="重新读取日志" onClick={onRefresh}>

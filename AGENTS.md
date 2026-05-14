@@ -67,3 +67,11 @@
 5. Do not add CBR in the current version.
 6. Imported library content under `library/books/` is local-only and must not be committed.
 7. Keep the workflow auto-only and do not add reference mode.
+
+## Reader UX rules
+
+1. Keep `Gallery` paginated when image counts grow large.
+2. Prefer thumbnail URLs and lazy loading for image-heavy pages.
+3. `Reader` should preserve keyboard navigation and BW / color toggles.
+4. `Library` should keep search and sort lightweight without pulling in heavy dependencies.
+5. Reader caches under `library/books/<book_id>/pages_color` stay local-only and must not be committed.
