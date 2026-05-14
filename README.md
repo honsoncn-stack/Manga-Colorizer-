@@ -1,9 +1,19 @@
-<img width="1440" height="1080" alt="010" src="https://github.com/user-attachments/assets/33aa4957-6927-426c-8759-bb8407d6e63c" /># Manga Auto Colorizer & Reader
+# Manga Auto Colorizer & Reader
 
 Windows 本地漫画阅读与自动上色工具。导入本地漫画后，可以在阅读器里按页查看黑白原图和彩色结果，并导出完整 PDF。
 
 > 当前仅做好 1.0 免费开源初代产品，2.0 会基于真实用户反馈继续开发。
 
+## 效果对比
+
+<table>
+  <tr>
+    <td align="center"><strong>Before</strong><br><img src="docs/assets/readme-before.jpg" width="420" alt="Before black-and-white manga page sample"></td>
+    <td align="center"><strong>After</strong><br><img src="docs/assets/readme-after.jpg" width="420" alt="After auto colorized manga page sample"></td>
+  </tr>
+</table>
+
+示例图为授权二创样张，仅用于展示自动上色前后效果。
 
 ## 普通用户怎么安装
 
