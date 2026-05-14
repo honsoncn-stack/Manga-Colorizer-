@@ -28,6 +28,27 @@ def list_preview_images(directory: Path, limit: int) -> list[Path]:
     return sorted(directory.glob("*.png"))[:limit]
 
 
+def count_input_images(directory: Path) -> int:
+    if not directory.exists():
+        return 0
+    return len(
+        [
+            path
+            for path in directory.iterdir()
+            if path.is_file() and path.suffix.lower() in {".png", ".jpg", ".jpeg", ".webp", ".bmp"}
+        ]
+    )
+
+
+def latest_pdf(directory: Path) -> Path | None:
+    if not directory.exists():
+        return None
+    pdfs = sorted(directory.glob("*.pdf"))
+    if not pdfs:
+        return None
+    return pdfs[-1]
+
+
 def read_quality_report(path: Path) -> dict:
     if not path.exists():
         return {}

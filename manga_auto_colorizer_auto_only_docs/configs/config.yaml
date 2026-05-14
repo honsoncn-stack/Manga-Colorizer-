@@ -5,21 +5,15 @@ conda_env_path: D:\CondaEnvs\manga-color-v2
 python_path: D:\CondaEnvs\manga-color-v2\python.exe
 default_mode: auto
 device: auto
+
 input_pages_dir: input/pages_bw
 input_pdf_dir: input/pdf
 output_dir: output
 models_dir: models
+
 manga_colorization_v2_dir: external/manga-colorization-v2
+
 max_retry: 2
 export_pdf: true
 preserve_ink_lines: true
 quality_check: true
-default_model_size: 768
-default_disable_denoise: true
-default_denoiser_sigma: 18
-default_line_strength: 0.72
-default_color_saturation: 1.12
-default_color_contrast: 1.05
-default_color_brightness: 1.01
-default_skin_fix_strength: 0.48
-default_blur_threshold: 0.24

@@ -4,3 +4,6 @@ default_input_type: pages
 show_logs_tail_lines: 200
 preview_max_images: 24
 final_pdf_name: chapter_colorized.pdf
+theme_name: Sakura Card
+accent_color: "#ff6f91"
+surface_color: "#fff7fb"

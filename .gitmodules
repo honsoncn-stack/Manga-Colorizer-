@@ -1,3 +1,4 @@
 [submodule "external/manga-colorization-v2"]
 	path = external/manga-colorization-v2
 	url = https://github.com/qweasdd/manga-colorization-v2.git
+	ignore = untracked
