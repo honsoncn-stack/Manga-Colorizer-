@@ -5,11 +5,11 @@ const items = [
   { key: "dashboard", label: "总览", hint: "工作台主页", icon: LayoutDashboard },
   { key: "library", label: "书库", hint: "导入与管理", icon: Library },
   { key: "reader", label: "阅读器", hint: "单页阅读", icon: BookOpen },
-  { key: "queue", label: "上色队列", hint: "任务与日志", icon: Sparkles },
-  { key: "gallery", label: "图库", hint: "输出预览", icon: Image },
-  { key: "logs", label: "日志", hint: "后端与流水线", icon: ScrollText },
+  { key: "queue", label: "上色队列", hint: "进度与记录", icon: Sparkles },
+  { key: "gallery", label: "图库", hint: "彩图预览", icon: Image },
+  { key: "logs", label: "记录", hint: "运行记录", icon: ScrollText },
   { key: "settings", label: "设置", hint: "路径与阅读偏好", icon: FolderCog },
-  { key: "about", label: "关于", hint: "版本与说明", icon: Info },
+  { key: "about", label: "说明", hint: "使用说明", icon: Info },
 ];
 
 export default function Sidebar({ currentPage, onChange }) {
@@ -19,7 +19,7 @@ export default function Sidebar({ currentPage, onChange }) {
         <img src={new URL("../assets/logo-mark.svg", import.meta.url).href} alt="" className="brand-mark" />
         <div>
           <div className="brand-title">Manga Auto Colorizer</div>
-          <div className="brand-subtitle">本地漫画上色阅读器</div>
+          <div className="brand-subtitle">黑白漫画，一键焕彩</div>
         </div>
       </div>
 
@@ -41,7 +41,7 @@ export default function Sidebar({ currentPage, onChange }) {
 
       <div className="sidebar-footer">
         <StatusBadge tone="ok">仅自动上色</StatusBadge>
-        <StatusBadge tone="neutral">本地阅读器模式</StatusBadge>
+        <StatusBadge tone="neutral">本地文件</StatusBadge>
       </div>
     </aside>
   );

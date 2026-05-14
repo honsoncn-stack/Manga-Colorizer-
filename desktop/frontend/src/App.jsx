@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Sidebar from "./components/Sidebar";
 import TopBar from "./components/TopBar";
 import Dashboard from "./pages/Dashboard";
@@ -33,17 +33,18 @@ const pageMeta = {
   dashboard: { title: "阅读器总览", subtitle: "查看书库、阅读进度与自动上色状态" },
   library: { title: "本地书库", subtitle: "导入本地漫画并生成阅读缓存" },
   reader: { title: "阅读器", subtitle: "本地单页阅读、上色与导出" },
-  queue: { title: "上色队列", subtitle: "查看阅读器上色任务、等待队列与日志" },
-  gallery: { title: "彩图预览", subtitle: "分页查看流水线输出和书库彩页" },
-  logs: { title: "运行日志", subtitle: "查看流水线、阅读器与后端日志" },
+  queue: { title: "上色队列", subtitle: "查看上色进度、等待页和运行记录" },
+  gallery: { title: "彩图预览", subtitle: "分页查看临时彩图和书库彩页" },
+  logs: { title: "运行记录", subtitle: "查看上色、阅读器和应用运行记录" },
   settings: { title: "设置", subtitle: "管理路径、缓存和阅读偏好" },
-  about: { title: "关于阅读器模式", subtitle: "查看当前版本说明与使用范围" },
+  about: { title: "使用说明", subtitle: "查看导入、阅读、上色和导出说明" },
 };
 
 const DEFAULT_READER_SETTINGS = {
   readingDirection: "rtl",
   defaultZoom: "fit-height",
   autoPrefetchNextPages: false,
+  wheelPageTurn: true,
 };
 
 function loadReaderSettings() {
@@ -167,6 +168,12 @@ export default function App() {
     setCurrentPage("reader");
   };
 
+  const handleReaderBookLoaded = useCallback((manifest) => {
+    if (manifest?.book_id) {
+      setCurrentBookId(manifest.book_id);
+    }
+  }, []);
+
   const page = pageMeta[currentPage] || pageMeta.dashboard;
   let content = null;
 
@@ -221,16 +228,14 @@ export default function App() {
     content = (
       <Reader
         currentBookId={currentBookId}
+        libraryBooks={libraryBooks}
         readerSettings={readerSettings}
         readerJobStatus={libraryJobStatus}
         env={env}
         restoreState={readerRestoreState}
         onReaderSettingsChange={setReaderSettings}
-        onBookLoaded={(manifest) => {
-          if (manifest?.book_id) {
-            setCurrentBookId(manifest.book_id);
-          }
-        }}
+        onChangeBook={openReaderForBook}
+        onBookLoaded={handleReaderBookLoaded}
         onOpenLibrary={() => setCurrentPage("library")}
         onOpenQueue={() => setCurrentPage("queue")}
       />
@@ -274,7 +279,7 @@ export default function App() {
         <footer className="footer-strip">
           <span>后端：{health?.status || "未知"}</span>
           <span>接口：{health?.backendUrl || "http://127.0.0.1:8765"}</span>
-          <span>模式：本地阅读器 + 自动上色</span>
+          <span>本地阅读 + 自动上色</span>
         </footer>
       </main>
     </div>

@@ -66,7 +66,8 @@ function isWithinProject(targetPath) {
 }
 
 function resolveWithinProject(targetPath) {
-  const resolved = path.resolve(targetPath);
+  const candidate = path.isAbsolute(targetPath) ? targetPath : path.join(PROJECT_ROOT, targetPath);
+  const resolved = path.resolve(candidate);
   if (!isWithinProject(resolved)) {
     throw new Error("Path is outside project root");
   }

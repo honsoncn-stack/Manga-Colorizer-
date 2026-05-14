@@ -36,6 +36,7 @@ body {
 }
 
 body {
+  height: 100vh;
   min-height: 100vh;
   overflow: hidden;
   position: relative;
@@ -70,13 +71,17 @@ body::after {
 
 #root {
   position: relative;
+  height: 100vh;
+  min-height: 0;
 }
 
 .app-shell {
   display: grid;
   grid-template-columns: var(--sidebar-width) 1fr;
-  min-height: 100vh;
+  height: 100vh;
+  min-height: 0;
   background: transparent;
+  overflow: hidden;
 }
 
 .sidebar {
@@ -87,6 +92,8 @@ body::after {
   background: linear-gradient(180deg, rgba(18, 19, 32, 0.98), rgba(9, 10, 16, 0.98));
   border-right: 2px solid rgba(255, 255, 255, 0.05);
   box-shadow: 12px 0 36px rgba(0, 0, 0, 0.24);
+  min-height: 0;
+  overflow-y: auto;
 }
 
 .sidebar-brand {
@@ -175,9 +182,11 @@ body::after {
 
 .content-shell {
   display: grid;
-  grid-template-rows: auto 1fr auto;
+  grid-template-rows: auto minmax(0, 1fr) auto;
   min-width: 0;
-  min-height: 100vh;
+  height: 100vh;
+  min-height: 0;
+  overflow: hidden;
 }
 
 .topbar {
@@ -208,8 +217,12 @@ body::after {
 
 .content-scroll {
   min-width: 0;
-  overflow: auto;
-  padding: 10px 26px 26px;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 10px 26px 40px;
+  scrollbar-gutter: stable;
 }
 
 .footer-strip {
@@ -534,6 +547,17 @@ body::after {
   align-items: flex-start;
 }
 
+.reader-book-switcher {
+  padding: 10px 0 4px;
+}
+
+.reader-book-switch-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+}
+
 .reader-jump-row {
   display: grid;
   grid-template-columns: 1fr auto;
@@ -562,6 +586,15 @@ body::after {
     rgba(252, 249, 242, 0.94);
   box-shadow: inset 0 0 0 1px rgba(17, 18, 29, 0.08);
   overflow: auto;
+  overscroll-behavior: contain;
+  transition: border-color 160ms ease, box-shadow 160ms ease, background-color 160ms ease;
+}
+
+.reader-canvas.wheel-page-turn:hover {
+  border-color: rgba(210, 81, 194, 0.82);
+  box-shadow:
+    inset 0 0 0 1px rgba(17, 18, 29, 0.08),
+    0 0 0 4px rgba(210, 81, 194, 0.12);
 }
 
 .reader-page-image {
@@ -1125,6 +1158,12 @@ body::after {
 .image-tile-shell:hover .image-tile-delete-overlay {
   opacity: 1;
   transform: scale(1);
+  pointer-events: auto;
+}
+
+.image-tile-shell.is-selected .image-tile-frame {
+  border-color: rgba(255, 77, 109, 0.94);
+  box-shadow: 0 0 0 4px rgba(255, 77, 109, 0.14), 8px 8px 0 rgba(0, 0, 0, 0.24);
 }
 
 .image-tile-img {
@@ -1164,12 +1203,47 @@ body::after {
   font-weight: 900;
   box-shadow: 0 8px 16px rgba(0, 0, 0, 0.24);
   opacity: 0;
+  pointer-events: none;
   transform: scale(0.8);
   transition: opacity 140ms ease, transform 140ms ease, filter 140ms ease;
 }
 
+.image-tile-delete-overlay:focus-visible {
+  opacity: 1;
+  pointer-events: auto;
+  transform: scale(1);
+  outline: 3px solid rgba(87, 215, 255, 0.6);
+}
+
 .image-tile-delete-overlay:hover {
   filter: brightness(1.06);
+}
+
+.image-tile-select {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  z-index: 3;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 30px;
+  padding: 4px 8px;
+  border: 2px solid rgba(255, 255, 255, 0.92);
+  border-radius: 999px;
+  background: rgba(16, 16, 24, 0.82);
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 900;
+  cursor: pointer;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.24);
+}
+
+.image-tile-select input {
+  width: 15px;
+  height: 15px;
+  margin: 0;
+  accent-color: var(--danger-red);
 }
 
 .empty-state {
@@ -1295,6 +1369,79 @@ body::after {
   flex-wrap: wrap;
   gap: 10px;
   margin-bottom: 14px;
+}
+
+.gallery-wheel-area {
+  border-radius: 18px;
+  overscroll-behavior: contain;
+  transition: box-shadow 160ms ease;
+}
+
+.gallery-wheel-area:hover {
+  box-shadow: 0 0 0 4px rgba(210, 81, 194, 0.1);
+}
+
+.gallery-action-strip {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  margin: 2px 0 16px;
+  padding: 12px;
+  border: 1px solid rgba(18, 21, 40, 0.12);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.48);
+}
+
+.gallery-action-copy {
+  display: grid;
+  gap: 3px;
+  min-width: 220px;
+  color: #101018;
+}
+
+.gallery-action-title {
+  font-weight: 900;
+}
+
+.gallery-action-desc {
+  color: #4d5068;
+  font-size: 0.88rem;
+}
+
+.gallery-action-buttons {
+  justify-content: flex-end;
+}
+
+.gallery-batch-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 14px;
+  margin: -4px 0 16px;
+  padding: 10px 12px;
+  border: 1px dashed rgba(255, 77, 109, 0.45);
+  border-radius: 16px;
+  background: rgba(255, 77, 109, 0.08);
+  color: #101018;
+  font-weight: 800;
+}
+
+.gallery-batch-actions {
+  justify-content: flex-end;
+}
+
+@media (max-width: 900px) {
+  .gallery-action-strip,
+  .gallery-batch-bar {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .gallery-action-buttons,
+  .gallery-batch-actions {
+    justify-content: flex-start;
+  }
 }
 
 .gallery-toolbar,

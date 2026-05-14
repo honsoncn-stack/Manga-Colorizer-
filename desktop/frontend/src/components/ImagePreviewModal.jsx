@@ -37,7 +37,7 @@ export default function ImagePreviewModal({ items = [], activeIndex = -1, onClos
           <div>
             <div className="modal-title">{item.book_title ? `${item.book_title} · ${item.filename}` : item.filename}</div>
             <div className="modal-subtitle">
-              {item.page_number ? `第 ${item.page_number} 页` : "流水线输出"}
+              {item.page_number ? `第 ${item.page_number} 页` : "临时彩图"}
               {item.file_path ? ` · ${item.file_path}` : ""}
             </div>
           </div>

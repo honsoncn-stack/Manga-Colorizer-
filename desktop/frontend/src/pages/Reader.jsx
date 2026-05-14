@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import ActionButton from "../components/ActionButton";
 import MangaCard from "../components/MangaCard";
 import StatusBadge from "../components/StatusBadge";
@@ -18,10 +18,25 @@ const zoomPresets = [
   { key: "100%", label: "100%", value: "100%" },
 ];
 
+function formatPdfExportMessage(result) {
+  if (!result || typeof result !== "object") {
+    return "PDF 导出完成。";
+  }
+  const totalPages = Number(result.totalPages || 0);
+  const colorPages = Number(result.colorPages || 0);
+  const bwFallbackPages = Number(result.bwFallbackPages || 0);
+  if (!totalPages) {
+    return "PDF 导出完成。";
+  }
+  return `完整 PDF 导出完成：共 ${totalPages} 页，${colorPages} 页使用彩色结果，${bwFallbackPages} 页用黑白原图补齐。`;
+}
+
 export default function Reader({
   currentBookId,
+  libraryBooks = [],
   readerSettings,
   onReaderSettingsChange,
+  onChangeBook,
   onBookLoaded,
   readerJobStatus,
   env,
@@ -37,6 +52,7 @@ export default function Reader({
   const [loadError, setLoadError] = useState("");
   const [statusText, setStatusText] = useState("");
   const [pageLoading, setPageLoading] = useState(false);
+  const wheelTurnReadyRef = useRef(true);
 
   const totalPages = manifest?.total_pages || 0;
   const colorizedCount = manifest?.colorized_pages?.length || 0;
@@ -45,7 +61,8 @@ export default function Reader({
   const displayUrl = viewMode === "color" && pageData?.color_image_url ? pageData.color_image_url : pageData?.bw_image_url;
 
   const loadBook = useCallback(
-    async (bookId, targetPage = null) => {
+    async (bookId, targetPage = null, options = {}) => {
+      const showLoading = options.showLoading ?? true;
       if (!bookId) {
         setManifest(null);
         setPageData(null);
@@ -54,7 +71,9 @@ export default function Reader({
         return;
       }
 
-      setPageLoading(true);
+      if (showLoading) {
+        setPageLoading(true);
+      }
       setLoadError("");
       try {
         const nextManifest = await getLibraryBook(bookId);
@@ -70,7 +89,9 @@ export default function Reader({
         console.error(error);
         setLoadError(error instanceof Error ? error.message : "读取书籍失败。");
       } finally {
-        setPageLoading(false);
+        if (showLoading) {
+          setPageLoading(false);
+        }
       }
     },
     [onBookLoaded]
@@ -92,10 +113,22 @@ export default function Reader({
     if (readerJobStatus.book_id !== currentBookId) {
       return;
     }
-    if (readerJobStatus.status === "done" || readerJobStatus.current_page === currentPage) {
-      loadBook(currentBookId, currentPage).catch((error) => console.error(error));
+    if (
+      readerJobStatus.status === "done" ||
+      (readerJobStatus.current_page === currentPage && (readerJobStatus.success_count || readerJobStatus.failure_count))
+    ) {
+      loadBook(currentBookId, currentPage, { showLoading: false }).catch((error) => console.error(error));
     }
-  }, [readerJobStatus?.status, readerJobStatus?.progress, readerJobStatus?.current_page, readerJobStatus?.book_id, currentBookId, currentPage, loadBook]);
+  }, [
+    readerJobStatus?.status,
+    readerJobStatus?.current_page,
+    readerJobStatus?.book_id,
+    readerJobStatus?.success_count,
+    readerJobStatus?.failure_count,
+    currentBookId,
+    currentPage,
+    loadBook,
+  ]);
 
   useEffect(() => {
     if (!pageData?.color_image_url && viewMode === "color") {
@@ -115,6 +148,39 @@ export default function Reader({
     [currentBookId, manifest, loadBook]
   );
 
+  const handleReaderWheel = useCallback(
+    (event) => {
+      if (!readerSettings.wheelPageTurn || !manifest || busy || pageLoading) {
+        return;
+      }
+
+      const dominantDelta = Math.abs(event.deltaY) >= Math.abs(event.deltaX) ? event.deltaY : event.deltaX;
+      if (Math.abs(dominantDelta) < 35) {
+        return;
+      }
+
+      event.preventDefault();
+      if (!wheelTurnReadyRef.current) {
+        return;
+      }
+
+      const targetPage = dominantDelta > 0 ? currentPage + 1 : currentPage - 1;
+      if (targetPage < 1 || targetPage > totalPages) {
+        return;
+      }
+
+      wheelTurnReadyRef.current = false;
+      goToPage(targetPage)
+        .catch((error) => console.error(error))
+        .finally(() => {
+          window.setTimeout(() => {
+            wheelTurnReadyRef.current = true;
+          }, 320);
+        });
+    },
+    [busy, currentPage, goToPage, manifest, pageLoading, readerSettings.wheelPageTurn, totalPages]
+  );
+
   const runAction = useCallback(
     async (work, successMessage) => {
       setBusy(true);
@@ -124,9 +190,10 @@ export default function Reader({
         if (!env?.weightsReady && successMessage?.includes("上色")) {
           throw new Error("模型权重缺失，当前无法执行上色。");
         }
-        await work();
-        if (successMessage) {
-          setStatusText(successMessage);
+        const result = await work();
+        const nextStatus = typeof successMessage === "function" ? successMessage(result) : successMessage;
+        if (nextStatus) {
+          setStatusText(nextStatus);
         }
       } catch (error) {
         console.error(error);
@@ -210,6 +277,26 @@ export default function Reader({
               <div className="reader-book-title">{manifest.title}</div>
               <div className="reader-book-meta">{progressText}</div>
 
+              <div className="field-group reader-book-switcher">
+                <label className="field-label">切换书籍</label>
+                <div className="reader-book-switch-row">
+                  <select className="path-input" value={currentBookId} onChange={(event) => onChangeBook?.(event.target.value)}>
+                    {libraryBooks.length ? (
+                      libraryBooks.map((book) => (
+                        <option key={book.book_id} value={book.book_id}>
+                          {book.title}
+                        </option>
+                      ))
+                    ) : (
+                      <option value="">暂无书籍</option>
+                    )}
+                  </select>
+                  <ActionButton variant="ghost" onClick={onOpenLibrary}>
+                    书库
+                  </ActionButton>
+                </div>
+              </div>
+
               <div className="reader-toolbar">
                 <ActionButton variant="secondary" disabled={currentPage <= 1 || pageLoading} onClick={() => goToPage(currentPage - 1)}>
                   上一页
@@ -287,6 +374,12 @@ export default function Reader({
                 >
                   自动预上色后 3 页
                 </ActionButton>
+                <ActionButton
+                  variant={readerSettings.wheelPageTurn ? "secondary" : "ghost"}
+                  onClick={() => onReaderSettingsChange({ ...readerSettings, wheelPageTurn: !readerSettings.wheelPageTurn })}
+                >
+                  滚轮翻页
+                </ActionButton>
               </div>
 
               <div className="reader-toolbar reader-toolbar-wrap">
@@ -324,8 +417,8 @@ export default function Reader({
                 >
                   整本上色
                 </ActionButton>
-                <ActionButton variant="ghost" onClick={() => runAction(() => exportLibraryPdf(currentBookId), "PDF 导出完成。")}>
-                  导出彩色 PDF
+                <ActionButton variant="ghost" onClick={() => runAction(() => exportLibraryPdf(currentBookId), formatPdfExportMessage)}>
+                  导出完整 PDF
                 </ActionButton>
                 <ActionButton variant="ghost" onClick={() => openFolder(`library\\books\\${currentBookId}`)}>
                   打开书籍目录
@@ -339,9 +432,12 @@ export default function Reader({
             <div className="reader-stage">
               <div className="reader-stage-meta">
                 <div>{progressText}</div>
-                <div>快捷键：→ / Space 翻页，← 上一页，B 切换黑白彩色，C 上色当前页</div>
+                <div>快捷键：→ / Space 翻页，← 上一页，滚轮翻页，B 切换黑白彩色，C 上色当前页</div>
               </div>
-              <div className={`reader-canvas zoom-${readerSettings.defaultZoom}`}>
+              <div
+                className={`reader-canvas zoom-${readerSettings.defaultZoom}${readerSettings.wheelPageTurn ? " wheel-page-turn" : ""}`}
+                onWheel={handleReaderWheel}
+              >
                 {pageLoading ? <div className="reader-loading">正在加载页面...</div> : null}
                 {displayUrl ? <img src={displayUrl} alt={`${manifest.title} 第 ${currentPage} 页`} className="reader-page-image" /> : null}
               </div>

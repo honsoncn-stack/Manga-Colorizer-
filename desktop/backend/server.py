@@ -37,6 +37,7 @@ from library_utils import (  # noqa: E402
     remove_tree_one_by_one,
     save_manifest,
     update_current_page,
+    upsert_index_entry,
 )
 
 
@@ -213,6 +214,26 @@ def resolve_project_path(value: str) -> Path:
     if not is_within_project(candidate):
         raise HTTPException(status_code=400, detail="Path is outside project root")
     return candidate
+
+
+def library_color_page_target(target: Path) -> tuple[str, int] | None:
+    try:
+        relative = target.relative_to(BOOKS_ROOT)
+    except ValueError:
+        return None
+    if len(relative.parts) != 3 or relative.parts[1] != "pages_color":
+        return None
+    try:
+        page_number = int(target.stem)
+    except ValueError:
+        return None
+    return relative.parts[0], page_number
+
+
+def is_allowed_delete_target(target: Path) -> bool:
+    if any(target.is_relative_to(root) for root in ALLOWED_DELETE_ROOTS):
+        return True
+    return library_color_page_target(target) is not None
 
 
 def clone_pipeline_state() -> dict[str, Any]:
@@ -845,11 +866,18 @@ def api_delete_file(payload: DeletePathRequest) -> dict[str, object]:
     target = resolve_project_path(payload.path)
     if target.is_dir():
         raise HTTPException(status_code=400, detail="Only files can be deleted")
-    if not any(target.is_relative_to(root) for root in ALLOWED_DELETE_ROOTS):
+    library_target = library_color_page_target(target)
+    if not is_allowed_delete_target(target):
         raise HTTPException(status_code=400, detail="File deletion is only allowed for gallery images")
     if not target.exists():
         raise HTTPException(status_code=404, detail="File not found")
+    library_manifest = load_manifest(library_target[0]) if library_target else None
     target.unlink()
+    if library_target and library_manifest:
+        _book_id, page_number = library_target
+        library_manifest["colorized_pages"] = [int(value) for value in library_manifest.get("colorized_pages", []) if int(value) != page_number]
+        save_manifest(library_manifest)
+        upsert_index_entry(library_manifest)
     append_project_log(PIPELINE_LOG, f"[DELETE] {target}")
     return {"status": "ok", "deleted": str(target)}
 
@@ -1006,13 +1034,25 @@ def api_library_set_current_page(book_id: str, payload: ReaderPageRequest) -> di
 
 @app.post("/api/library/book/{book_id}/export-pdf")
 def api_library_export_pdf(book_id: str) -> dict[str, object]:
+    manifest = get_manifest_or_404(book_id)
+    total_pages = int(manifest.get("total_pages", 0))
     result = run_command([str(PYTHON_EXE), str(EXPORT_BOOK_PDF_SCRIPT), "--book-id", book_id])
     ensure_command_ok(result, "Export reader PDF")
     export_path = book_root(book_id) / "export" / "colorized_book.pdf"
+    color_pages = 0
+    bw_fallback_pages = 0
+    for page_number in range(1, total_pages + 1):
+        if manifest_page_path(book_id, page_number, color=True).exists():
+            color_pages += 1
+        elif manifest_page_path(book_id, page_number, color=False).exists():
+            bw_fallback_pages += 1
     return {
         "ok": True,
         "path": str(export_path),
         "previewUrl": f"{APP_BASE_URL}/media/library/{book_id}/export/colorized_book.pdf",
+        "totalPages": total_pages,
+        "colorPages": color_pages,
+        "bwFallbackPages": bw_fallback_pages,
     }
 
 

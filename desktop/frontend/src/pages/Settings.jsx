@@ -1,11 +1,9 @@
 import ActionButton from "../components/ActionButton";
 import MangaCard from "../components/MangaCard";
 import PathField from "../components/PathField";
-import StatusBadge from "../components/StatusBadge";
 import { projectPaths } from "../lib/paths";
 
 export default function Settings({
-  env,
   projectStatus,
   readerSettings,
   onReaderSettingsChange,
@@ -74,6 +72,17 @@ export default function Settings({
               </ActionButton>
             </div>
           </div>
+          <div className="field-group">
+            <label className="field-label">滚轮翻页</label>
+            <div className="button-row">
+              <ActionButton
+                variant={readerSettings.wheelPageTurn ? "secondary" : "ghost"}
+                onClick={() => onReaderSettingsChange({ ...readerSettings, wheelPageTurn: !readerSettings.wheelPageTurn })}
+              >
+                {readerSettings.wheelPageTurn ? "已开启" : "已关闭"}
+              </ActionButton>
+            </div>
+          </div>
         </MangaCard>
 
         <MangaCard title="维护操作" subtitle="环境检查、书库缓存和输出清理。">
@@ -87,15 +96,12 @@ export default function Settings({
             <ActionButton variant="ghost" hint="打开本地书库目录" onClick={onOpenLibraryFolder}>
               打开书库目录
             </ActionButton>
-            <ActionButton variant="danger" hint="清理旧流水线输出" onClick={onCleanOutputs}>
+            <ActionButton variant="danger" hint="清理旧的临时彩图" onClick={onCleanOutputs}>
               清理输出
             </ActionButton>
             <ActionButton variant="danger" hint="清理阅读器彩色缓存和导出 PDF" onClick={onClearLibraryCache}>
               清理阅读器缓存
             </ActionButton>
-          </div>
-          <div className="settings-note">
-            <StatusBadge tone={env?.weightsReady ? "ok" : "missing"}>{env?.weightsReady ? "模型权重已就绪" : "模型权重缺失"}</StatusBadge>
           </div>
         </MangaCard>
       </div>

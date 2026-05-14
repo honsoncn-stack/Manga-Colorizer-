@@ -24,6 +24,22 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
+def resolve_generated_page(output_dir: Path, expected_name: str) -> Path:
+    expected_path = output_dir / expected_name
+    if expected_path.exists():
+        return expected_path
+
+    candidates = sorted(
+        path
+        for path in output_dir.iterdir()
+        if path.is_file() and path.suffix.lower() in {".png", ".jpg", ".jpeg", ".webp", ".bmp"}
+    )
+    if len(candidates) == 1:
+        log_reader(f"[PAGE] remapped generated page {candidates[0].name} -> {expected_name}")
+        return candidates[0]
+    raise FileNotFoundError(f"Colorized output not found: {expected_path}")
+
+
 def run_step(name: str, command: list[str]) -> None:
     log_reader(f"[STEP] {name} :: {' '.join(command)}")
     result = subprocess.run(
@@ -128,9 +144,7 @@ def colorize_page(book_id: str, page_number: int) -> Path:
             ],
         )
 
-        fixed_page = fixed_dir / page_name
-        if not fixed_page.exists():
-            raise FileNotFoundError(f"Colorized output not found: {fixed_page}")
+        fixed_page = resolve_generated_page(fixed_dir, page_name)
         shutil.copy2(fixed_page, target_page)
 
     add_colorized_page(book_id, page_number)

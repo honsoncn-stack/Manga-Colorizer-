@@ -192,8 +192,8 @@ export default function Library({
                       <ActionButton variant="secondary" hint="批量上色整本书" onClick={() => onColorizeAll(book.book_id)}>
                         全书上色
                       </ActionButton>
-                      <ActionButton variant="ghost" hint="导出当前书籍 PDF" onClick={() => onExportPdf(book.book_id)}>
-                        导出 PDF
+                      <ActionButton variant="ghost" hint="彩页优先，未上色页用黑白原图补齐" onClick={() => onExportPdf(book.book_id)}>
+                        导出完整 PDF
                       </ActionButton>
                     </div>
                   </div>

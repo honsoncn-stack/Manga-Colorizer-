@@ -122,8 +122,8 @@ export default function Colorize({ logs, projectStatus, jobStatus, onStartColori
         </div>
       </MangaCard>
 
-      <LogPanel title="最近流水线日志" content={logs?.pipelineLog} />
-      <LogPanel title="最近错误日志" content={logs?.errorLog} emptyText="暂无错误记录。" />
+      <LogPanel title="最近上色记录" content={logs?.pipelineLog} />
+      <LogPanel title="最近错误记录" content={logs?.errorLog} emptyText="暂无错误记录。" />
     </div>
   );
 }
