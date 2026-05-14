@@ -15,6 +15,74 @@ Windows 本地漫画阅读与自动上色工具。导入本地漫画后，可以
 
 仅用于展示自动上色前后效果。
 
+## 应用界面展示
+
+下面是 Manga Auto Colorizer 1.0 的主要界面，按日常使用顺序展示。
+
+### 1. 阅读器总览
+
+查看本机环境、模型状态、书库数量、最近阅读和常用入口。
+
+<p align="center">
+  <img src="docs/assets/app-showcase/01-overview.png" width="860" alt="Manga Auto Colorizer 阅读器总览界面">
+</p>
+
+### 2. 书架
+
+展示已保存的书籍，可继续阅读、全书上色、导出处理后的 PDF，也支持书库删减。
+
+<p align="center">
+  <img src="docs/assets/app-showcase/02-library.png" width="860" alt="Manga Auto Colorizer 书架界面">
+</p>
+
+### 3. 本地书库导入
+
+支持导入图片文件夹、PDF 或 CBZ，并建立本地漫画阅读书架。
+
+<p align="center">
+  <img src="docs/assets/app-showcase/03-import.png" width="860" alt="Manga Auto Colorizer 本地书库导入界面">
+</p>
+
+### 4. 上色队列
+
+查看当前处理图片、上色进度、任务状态和等待队列。
+
+<p align="center">
+  <img src="docs/assets/app-showcase/04-queue.png" width="860" alt="Manga Auto Colorizer 上色队列界面">
+</p>
+
+### 5. 彩图预览
+
+分页查看渲染后的彩图输出，并按书籍、文件夹切换不同输出结果。
+
+<p align="center">
+  <img src="docs/assets/app-showcase/05-gallery.png" width="860" alt="Manga Auto Colorizer 彩图预览界面">
+</p>
+
+### 6. 运行记录
+
+集中查看上色、阅读器和应用运行记录，方便定位问题和反馈 Bug。
+
+<p align="center">
+  <img src="docs/assets/app-showcase/06-logs.png" width="860" alt="Manga Auto Colorizer 运行记录界面">
+</p>
+
+### 7. 设置
+
+管理输出路径、PDF 路径、日志路径、阅读偏好和缓存清理。
+
+<p align="center">
+  <img src="docs/assets/app-showcase/07-settings.png" width="860" alt="Manga Auto Colorizer 设置界面">
+</p>
+
+### 8. 使用说明
+
+内置基础使用说明、GitHub 开源地址、Bug 反馈入口和开发者信息。
+
+<p align="center">
+  <img src="docs/assets/app-showcase/08-help.png" width="860" alt="Manga Auto Colorizer 使用说明界面">
+</p>
+
 ## 普通用户怎么安装
 
 普通用户不需要点击 GitHub 的 `Code` 下载源码。请进入 Release 页面下载发布包：
