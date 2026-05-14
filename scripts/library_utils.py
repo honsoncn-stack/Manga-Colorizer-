@@ -5,6 +5,7 @@ import re
 from datetime import datetime
 from pathlib import Path
 from typing import Any
+from uuid import uuid4
 
 from PIL import Image
 
@@ -49,13 +50,13 @@ def save_library_index(data: dict[str, Any]) -> None:
 
 
 def next_book_id(index_data: dict[str, Any]) -> str:
-    current_max = 0
-    for book in index_data.get("books", []):
-        book_id = str(book.get("book_id", ""))
-        match = re.fullmatch(r"book_(\d+)", book_id)
-        if match:
-            current_max = max(current_max, int(match.group(1)))
-    return f"book_{current_max + 1:03d}"
+    existing_ids = {str(book.get("book_id", "")) for book in index_data.get("books", [])}
+    timestamp = datetime.utcnow().strftime("%Y%m%d%H%M%S")
+    for _ in range(100):
+        candidate = f"book_{timestamp}_{uuid4().hex[:8]}"
+        if candidate not in existing_ids and not book_root(candidate).exists():
+            return candidate
+    raise RuntimeError("Could not allocate a unique book id")
 
 
 def book_root(book_id: str) -> Path:
@@ -102,7 +103,7 @@ def build_index_entry(manifest: dict[str, Any]) -> dict[str, Any]:
     thumbnail_path = book_root(book_id) / "thumbnails" / thumb_name
     cover_url = None
     if thumbnail_path.exists():
-        cover_url = f"/media/library/{book_id}/thumbnails/{thumb_name}"
+        cover_url = f"/media/library/{book_id}/thumbnails/{thumb_name}?v={thumbnail_path.stat().st_mtime_ns}"
     return {
         "book_id": book_id,
         "title": manifest.get("title", book_id),

@@ -640,6 +640,16 @@ def build_pipeline_gallery_item(image_path: Path) -> dict[str, Any]:
     }
 
 
+def versioned_url(url: str, file_path: Path | None) -> str:
+    if file_path and file_path.exists():
+        return f"{url}?v={file_path.stat().st_mtime_ns}"
+    return url
+
+
+def library_media_url(book_id: str, folder: str, filename: str, file_path: Path | None = None) -> str:
+    return versioned_url(f"{APP_BASE_URL}/media/library/{book_id}/{folder}/{filename}", file_path)
+
+
 def build_library_gallery_item(book_id: str, manifest: dict[str, Any], page_number: int) -> dict[str, Any] | None:
     image_path = manifest_page_path(book_id, page_number, color=True)
     if not image_path.exists():
@@ -651,8 +661,8 @@ def build_library_gallery_item(book_id: str, manifest: dict[str, Any], page_numb
         "book_title": manifest.get("title", book_id),
         "page_number": page_number,
         "filename": image_path.name,
-        "image_url": f"{APP_BASE_URL}/media/library/{book_id}/pages_color/{image_path.name}",
-        "thumb_url": f"{APP_BASE_URL}/media/library/{book_id}/thumbnails/color/{thumb_path.name}" if thumb_path and thumb_path.exists() else f"{APP_BASE_URL}/media/library/{book_id}/pages_color/{image_path.name}",
+        "image_url": library_media_url(book_id, "pages_color", image_path.name, image_path),
+        "thumb_url": library_media_url(book_id, "thumbnails/color", thumb_path.name, thumb_path) if thumb_path and thumb_path.exists() else library_media_url(book_id, "pages_color", image_path.name, image_path),
         "source": "library",
         "is_colorized": True,
         "file_path": str(image_path),
@@ -665,6 +675,10 @@ def list_library_books() -> list[dict[str, Any]]:
     books = []
     for book in load_library_index().get("books", []):
         item = dict(book)
+        book_id = str(item.get("book_id", ""))
+        thumbnail_path = book_root(book_id) / "thumbnails" / "001.png"
+        if thumbnail_path.exists():
+            item["cover_url"] = library_media_url(book_id, "thumbnails", thumbnail_path.name, thumbnail_path)
         cover_url = item.get("cover_url")
         if cover_url and str(cover_url).startswith("/"):
             item["cover_url"] = f"{APP_BASE_URL}{cover_url}"
@@ -726,8 +740,8 @@ def get_library_gallery_source(book_id: str | None, *, only_colorized: bool = Tr
                         "book_title": manifest.get("title", selected_book_id),
                         "page_number": page_number,
                         "filename": bw_path.name,
-                        "image_url": f"{APP_BASE_URL}/media/library/{selected_book_id}/pages_bw/{bw_path.name}",
-                        "thumb_url": f"{APP_BASE_URL}/media/library/{selected_book_id}/thumbnails/bw/{thumb_path.name}" if thumb_path and thumb_path.exists() else f"{APP_BASE_URL}/media/library/{selected_book_id}/pages_bw/{bw_path.name}",
+                        "image_url": library_media_url(selected_book_id, "pages_bw", bw_path.name, bw_path),
+                        "thumb_url": library_media_url(selected_book_id, "thumbnails/bw", thumb_path.name, thumb_path) if thumb_path and thumb_path.exists() else library_media_url(selected_book_id, "pages_bw", bw_path.name, bw_path),
                         "source": "library",
                         "is_colorized": False,
                         "file_path": str(bw_path),
@@ -963,9 +977,10 @@ def api_library_import_cbz(payload: ImportBookRequest) -> dict[str, object]:
 @app.get("/api/library/book/{book_id}")
 def api_library_book(book_id: str) -> dict[str, object]:
     manifest = get_manifest_or_404(book_id)
+    cover_path = book_root(book_id) / "thumbnails" / "001.png"
     manifest["cover_url"] = (
-        f"{APP_BASE_URL}/media/library/{book_id}/thumbnails/001.png"
-        if (book_root(book_id) / "thumbnails" / "001.png").exists()
+        library_media_url(book_id, "thumbnails", "001.png", cover_path)
+        if cover_path.exists()
         else None
     )
     return manifest
@@ -983,8 +998,8 @@ def api_library_page(book_id: str, page_number: int) -> dict[str, object]:
         "book_id": book_id,
         "page_number": page_number,
         "total_pages": total_pages,
-        "bw_image_url": f"{APP_BASE_URL}/media/library/{book_id}/pages_bw/{bw_path.name}",
-        "color_image_url": f"{APP_BASE_URL}/media/library/{book_id}/pages_color/{color_path.name}" if color_path.exists() else None,
+        "bw_image_url": library_media_url(book_id, "pages_bw", bw_path.name, bw_path),
+        "color_image_url": library_media_url(book_id, "pages_color", color_path.name, color_path) if color_path.exists() else None,
         "is_colorized": color_path.exists(),
     }
 

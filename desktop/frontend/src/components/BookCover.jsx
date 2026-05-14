@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { BookOpen } from "lucide-react";
 
 function buildShortLabel(title = "") {
@@ -12,6 +12,10 @@ function buildShortLabel(title = "") {
 export default function BookCover({ src, title, className = "" }) {
   const [broken, setBroken] = useState(false);
   const shortLabel = useMemo(() => buildShortLabel(title), [title]);
+
+  useEffect(() => {
+    setBroken(false);
+  }, [src]);
 
   if (!src || broken) {
     return (
