@@ -119,6 +119,9 @@ library/books/<book_id>/export/colorized_book.pdf
 - [普通用户使用指南](docs/PUBLIC_USER_GUIDE.md)
 - [公开版安装与环境配置](docs/PUBLIC_INSTALLATION.md)
 - [1.0 开源发布说明](docs/OPEN_SOURCE_1_0.md)
+- [1.0.0 发布说明](docs/RELEASE_NOTES_1.0.0.md)
+- [许可证边界说明](LICENSE_NOTICE.md)
+- [第三方组件说明](THIRD_PARTY_NOTICES.md)
 - [反馈与 2.0 路线](docs/FEEDBACK_AND_ROADMAP.md)
 - [仓库结构说明](docs/REPOSITORY_STRUCTURE.md)
 - [反馈与贡献](CONTRIBUTING.md)
@@ -147,9 +150,9 @@ library/books/<book_id>/export/colorized_book.pdf
 
 ## 许可证说明
 
-本项目计划免费开源分享。正式 1.0 Release 前，需要进一步核对外部模型、第三方代码和权重文件的许可证边界。
+本项目当前按 1.0 免费公开测试版分享。由于上游模型、外部代码和部分依赖存在各自的许可证边界，本仓库暂不把所有内容统一声明为 MIT、Apache 或其他宽松许可证。
 
-源码仓库不会提交模型权重；外部模型和第三方依赖遵循各自项目的许可证。
+源码仓库不会提交模型权重；外部模型、第三方代码和依赖遵循各自项目的许可证。发布、二次分发或商业使用前，请先阅读 [LICENSE_NOTICE.md](LICENSE_NOTICE.md) 和 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)。
 
 ## 开发者
 

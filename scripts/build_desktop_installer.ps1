@@ -10,6 +10,9 @@ $env:TORCH_HOME = "D:\AICache\torch"
 $env:XDG_CACHE_HOME = "D:\AICache"
 $env:TEMP = "D:\Temp"
 $env:TMP = "D:\Temp"
+$env:npm_config_cache = "D:\DevTools\ElectronLibs\npm-cache"
+
+New-Item -ItemType Directory -Path "D:\DevTools\ElectronLibs\npm-cache" -Force | Out-Null
 
 conda activate D:\CondaEnvs\manga-color-v2
 
