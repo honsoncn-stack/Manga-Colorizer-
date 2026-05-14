@@ -22,14 +22,14 @@ https://github.com/honsoncn-stack/Manga-Colorizer-/releases
 D:\MangaAutoColorizerSetup
 ```
 
-2. 如果已有模型权重，把它们放到：
+2. `user-kit.zip` 已包含上色所需权重文件：
 
 ```text
 D:\MangaAutoColorizerSetup\weights\generator.zip
 D:\MangaAutoColorizerSetup\weights\denoiser.pth
 ```
 
-没有权重时，应用可以打开和阅读，但不能正常上色。之后把权重放进去，再重新运行脚本即可。
+如果你手动替换过配置包，确认 `weights` 文件夹里仍然保留这两个文件后再运行脚本。
 
 3. 打开 PowerShell，运行：
 
@@ -70,3 +70,11 @@ https://github.com/honsoncn-stack/Manga-Colorizer-/issues
 反馈时请包含应用版本、Windows 版本、问题页面、复现步骤、实际结果、期望结果和应用「记录」页面里的相关日志。
 
 请不要上传受版权保护的完整漫画、完整 PDF、模型权重或个人隐私文件。
+
+## 致谢
+
+自动上色模型来自 `manga-colorization-v2`：
+
+https://github.com/qweasdd/manga-colorization-v2
+
+感谢原模型开发者的工作与授权支持。

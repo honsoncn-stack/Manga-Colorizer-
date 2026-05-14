@@ -18,7 +18,8 @@ Windows desktop manga reader and automatic colorization workflow.
 
 ## What is not included
 
-- No model weights.
+- Authorized model weights are shipped in the public Release user kit for easier
+  end-user setup. Git source commits do not track large binary weight files.
 - No Conda environment bundle.
 - No imported manga, user books, generated color pages, exported PDFs, logs, or
   reports.
@@ -53,6 +54,12 @@ Manga Auto Colorizer 1.0.0.exe
 The app expects the local project/runtime environment and model files to be
 prepared before the desktop shell is launched. Use the setup script inside
 `Manga-Auto-Colorizer-1.0.0-user-kit.zip`, then run the installer.
+
+The automatic colorization model is based on `manga-colorization-v2`:
+
+https://github.com/qweasdd/manga-colorization-v2
+
+Thanks to the original model developer for the work and authorization support.
 
 See:
 

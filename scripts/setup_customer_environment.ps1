@@ -310,7 +310,7 @@ function Install-Weights {
         (Join-Path $PackageRoot "models\downloads")
     )
     if (-not (Test-NonEmpty $weightsDir)) {
-        Write-Warn "No weights folder found. Put generator.zip and denoiser.pth in PackageRoot\weights, then rerun this script."
+        Write-Warn "The public Release user kit should include PackageRoot\weights with generator.zip and denoiser.pth. Re-download the full user kit or provide -WeightsSource."
         return
     }
 

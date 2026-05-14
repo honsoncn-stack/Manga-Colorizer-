@@ -19,5 +19,6 @@
 - README links to user guide, installation guide, feedback page, and release notes.
 - `LICENSE_NOTICE.md` and `THIRD_PARTY_NOTICES.md` are present and linked.
 - GitHub Release notes tell users where to download the installer or portable exe.
+- GitHub Release user kit includes authorized `generator.zip` and `denoiser.pth`.
 - `node_modules/`, `dist/`, `build/`, `release/`, `desktop/release/`, `input/`, `output/`, `models/`, `logs/`, `reports/`, and `library/books/` are not committed.
-- Model weights, user manga files, exported PDFs, installers, and portable executables are not committed.
+- Model weights, user manga files, exported PDFs, installers, and portable executables are not committed to Git.

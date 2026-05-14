@@ -57,7 +57,9 @@ The reader supports:
 
 In `Reader`, click `上色当前页`.
 
-If model weights are missing, the button remains visible but the UI clearly reports that weights are missing and colorization cannot start.
+The public Release user kit includes authorized model weights. If setup was not
+completed or the weight files were moved, the button remains visible but the UI
+clearly reports that the model is unavailable and colorization cannot start.
 
 ## Colorize multiple pages
 
@@ -137,7 +139,7 @@ Check that the source folder, PDF, or CBZ actually contains supported pages.
 Check:
 
 - `D:\CondaEnvs\manga-color-v2\python.exe`
-- model weights under `external/manga-colorization-v2`
+- model weights installed from `Manga-Auto-Colorizer-1.0.0-user-kit.zip`
 - `Logs` and `Colorize Queue`
 
 ### Exported PDF is missing color on some pages

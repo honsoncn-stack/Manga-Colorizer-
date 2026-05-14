@@ -9,12 +9,12 @@ audit.
 - Component: `external/manga-colorization-v2`
 - Upstream repository: https://github.com/qweasdd/manga-colorization-v2
 - Role: automatic manga page colorization pipeline
-- Notice: this project is not authored by this repository. The local checkout
-  does not include a clear top-level license file. Follow the upstream project
-  terms and verify permission before redistributing it or model weights.
+- Notice: this project is not authored by this repository. Thanks to the
+  original model developer for the work and authorization support.
 
-The source repository must not include downloaded model weights, including
-files such as `*.pth`, `*.pt`, `*.ckpt`, `*.safetensors`, `*.onnx`, or `*.pkl`.
+The GitHub Release user kit ships authorized weight files for easier end-user
+setup. Git source commits track code and docs, not large binary weight files
+such as `*.pth`, `*.pt`, `*.ckpt`, `*.safetensors`, `*.onnx`, or `*.pkl`.
 
 ## GPL-marked denoising files
 
@@ -50,7 +50,7 @@ The repository and source commits must not contain:
 
 - imported manga, PDFs, CBZ files, or other user content;
 - generated color pages, thumbnails, logs, reports, or exported PDFs;
-- model weights or model archives;
+- model weights or model archives in source commits;
 - Conda environments, `node_modules`, build output, installers, or release
   archives.
 

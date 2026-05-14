@@ -16,14 +16,14 @@
 D:\MangaAutoColorizerSetup
 ```
 
-2. 如果已经准备好模型权重，把权重文件放进解压后的 `weights` 文件夹：
+2. `user-kit.zip` 已包含上色所需权重文件：
 
 ```text
 D:\MangaAutoColorizerSetup\weights\generator.zip
 D:\MangaAutoColorizerSetup\weights\denoiser.pth
 ```
 
-如果暂时没有权重，应用仍可打开、导入和阅读，但不能正常上色。
+如果你手动替换过配置包，确认 `weights` 文件夹里仍然保留这两个文件后再运行脚本。
 
 3. 在解压目录运行环境配置脚本：
 
@@ -95,7 +95,7 @@ powershell -ExecutionPolicy Bypass -File scripts\setup_customer_environment.ps1
 
 ## 模型权重
 
-源码仓库不提供模型权重。用户需要按项目说明自行准备权重文件。
+GitHub Release 的用户配置包内置经授权的权重文件，方便普通用户直接配置。Git 提交只追踪代码和文档，不追踪大体积二进制权重文件。
 
 不要把这些文件提交到 Git：
 
@@ -106,6 +106,14 @@ powershell -ExecutionPolicy Bypass -File scripts\setup_customer_environment.ps1
 - `*.onnx`
 - `*.pkl`
 - `external/manga-colorization-v2/networks/archive/`
+
+## 原模型项目致谢
+
+自动上色模型来自 `manga-colorization-v2`：
+
+https://github.com/qweasdd/manga-colorization-v2
+
+感谢原模型开发者的工作与授权支持。
 
 ## 打包
 

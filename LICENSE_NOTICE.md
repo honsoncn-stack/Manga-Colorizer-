@@ -24,7 +24,9 @@ their own licenses and upstream terms.
 
 Important boundaries:
 
-- Model weights are not included in this source repository.
+- Authorized model weights are shipped in the GitHub Release user kit for easier
+  end-user setup. Git source commits track code and docs, not large binary
+  weight files.
 - User manga files, imported books, generated color pages, logs, reports, and
   exported PDFs are not included in this source repository.
 - `external/manga-colorization-v2` is an upstream third-party colorization
@@ -34,6 +36,14 @@ Important boundaries:
 - PyMuPDF is distributed under AGPL/commercial licensing terms.
 
 See `THIRD_PARTY_NOTICES.md` for the current third-party notice list.
+
+## Acknowledgements
+
+The automatic colorization model is based on `manga-colorization-v2`:
+
+https://github.com/qweasdd/manga-colorization-v2
+
+Thanks to the original model developer for the work and authorization support.
 
 ## User content
 

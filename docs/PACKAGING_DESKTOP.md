@@ -9,12 +9,16 @@ This project uses Electron Builder to create two Windows artifacts:
 
 ## Packaging boundaries
 
-The first release does **not** bundle:
+The desktop installer is paired with the Release user kit. Keep these large
+runtime pieces in the user kit / local environment rather than the installer:
 
-- model weights
 - the conda environment
 - `torch`
-- `manga-colorization-v2` weights
+
+For normal users, the GitHub Release also provides
+`Manga-Auto-Colorizer-1.0.0-user-kit.zip`, which includes the authorized
+`manga-colorization-v2` weights and setup script. The source Git commits still
+do not track large weight files.
 
 The packaged app still depends on the fixed local paths:
 
@@ -57,6 +61,6 @@ Release artifacts should be uploaded to GitHub Release. Do not commit installers
 - D drive Python is missing
 - Project root is missing
 - Port `8765` is already in use
-- Model weights are missing
+- Model weights were not installed from the user kit
 - Node dependency installation fails
 - Electron Builder packaging fails
