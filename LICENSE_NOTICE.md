@@ -24,7 +24,7 @@ their own licenses and upstream terms.
 
 Important boundaries:
 
-- Authorized model weights are shipped in the GitHub Release user kit for easier
+- Authorized model weights in the GitHub Release user kit for easier
   end-user setup. Git source commits track code and docs, not large binary
   weight files.
 - User manga files, imported books, generated color pages, logs, reports, and
