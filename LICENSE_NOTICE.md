@@ -43,7 +43,7 @@ The automatic colorization model is based on `manga-colorization-v2`:
 
 https://github.com/qweasdd/manga-colorization-v2
 
-Thanks to the original model developer for the work and authorization support.
+Thanks to the original model developer for the work and support.
 
 ## User content
 
