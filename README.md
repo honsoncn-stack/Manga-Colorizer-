@@ -20,6 +20,8 @@ https://github.com/honsoncn-stack/Manga-Colorizer-/releases
 
 安装前建议先看：[系统要求与排查清单](docs/SYSTEM_REQUIREMENTS.md)
 
+如果电脑没有安装 Conda，请先下载 `Miniconda3-latest-Windows-x86_64.exe`，放到 `user-kit` 解压目录，再运行环境配置脚本。脚本会自动安装到 `D:\Miniconda3`。如果下载到的文件名略有不同，只要是 `Miniconda3...Windows...x86_64.exe`，也可以直接放在解压目录。
+
 ## 项目地址
 
 - GitHub: https://github.com/honsoncn-stack/Manga-Colorizer-
@@ -63,6 +65,7 @@ docs/               用户文档和发布说明
 - 普通用户：只看 Release 和 `docs/INSTALL_FROM_GITHUB_RELEASE.md`。
 - 反馈 Bug：去 Issues，优先使用 Bug 反馈模板。
 - 开发者：克隆仓库后看 `AGENTS.md`、`docs/REPOSITORY_STRUCTURE.md` 和 `docs/PACKAGING_DESKTOP.md`。
+- 历史 Streamlit 入口和早期资料仍保留用于维护，不是 1.0 普通用户主路径；说明见 `docs/LEGACY_PATHS.md`。
 
 ## 启动开发版
 
@@ -144,6 +147,7 @@ library/books/<book_id>/export/colorized_book.pdf
 - [反馈与贡献](CONTRIBUTING.md)
 - [桌面端打包说明](docs/PACKAGING_DESKTOP.md)
 - [发布检查清单](docs/RELEASE_CHECKLIST.md)
+- [历史目录说明](docs/LEGACY_PATHS.md)
 
 ## 致谢
 
@@ -151,7 +155,7 @@ library/books/<book_id>/export/colorized_book.pdf
 
 https://github.com/qweasdd/manga-colorization-v2
 
-感谢原模型开发者的工作。本仓库的桌面阅读器、书库、队列、导出和本地产品化流程在此基础上做了集成。
+感谢原模型开发者的工作与授权支持。本仓库的桌面阅读器、书库、队列、导出和本地产品化流程在此基础上做了集成。
 
 ## 许可证说明
 

@@ -27,7 +27,9 @@ D:\MangaAutoColorizerSetup\weights\denoiser.pth
 
 如果你手动替换过配置包，确认 `weights` 文件夹里仍然保留这两个文件后再运行脚本。
 
-3. 在解压目录运行环境配置脚本：
+3. 如果电脑没有 Miniconda 或 Anaconda，请下载 `Miniconda3-latest-Windows-x86_64.exe`，放到 `D:\MangaAutoColorizerSetup`。文件名略有差异也可以，只要是 `Miniconda3...Windows...x86_64.exe`。
+
+4. 在解压目录运行环境配置脚本：
 
 ```powershell
 cd D:\MangaAutoColorizerSetup
@@ -43,7 +45,7 @@ D:\AICache
 D:\Temp
 ```
 
-4. 运行 `Manga Auto Colorizer Setup 1.0.0.exe`。
+5. 运行 `Manga Auto Colorizer Setup 1.0.0.exe`。
 
 安装目录建议选择：
 
@@ -51,7 +53,7 @@ D:\Temp
 D:\Programs\Manga Auto Colorizer
 ```
 
-5. 从桌面快捷方式启动 `Manga Auto Colorizer`。
+6. 从桌面快捷方式启动 `Manga Auto Colorizer`。
 
 源码仓库不会提交安装包。安装包文件应放在 GitHub Release，而不是放进 Git。
 

@@ -8,6 +8,7 @@
 - 建议使用 D 盘安装和运行。
 - 建议至少 20 GB 可用空间。
 - 首次配置需要稳定网络，用于安装 Python 依赖、Conda 环境和必要组件。
+- 需要 Conda。已经安装 Miniconda/Anaconda 的用户可以直接运行脚本；没有 Conda 的用户，把 `Miniconda3-latest-Windows-x86_64.exe` 放到 `user-kit` 解压目录后再运行脚本。文件名略有差异也可以，只要是 `Miniconda3...Windows...x86_64.exe`。
 - 可以使用 CPU 运行；有 NVIDIA GPU 会更快，但不是必须。
 
 ## 默认安装路径
@@ -47,9 +48,10 @@ weights\denoiser.pth
 1. Windows 是否是 64 位。
 2. D 盘是否存在。
 3. D 盘可用空间是否至少 20 GB。
-4. 网络是否能访问 GitHub 和 Python/npm 下载源。
+4. 网络是否能访问 GitHub、Conda 和 Python 包下载源。
 5. PowerShell 是否能正常打开。
 6. 杀毒软件或 Windows Defender 是否拦截了脚本、安装包或下载文件。
+7. 是否已经安装 Conda，或者是否已把 `Miniconda3-latest-Windows-x86_64.exe` 放到 `D:\MangaAutoColorizerSetup`。
 
 ## 常见问题
 
@@ -67,7 +69,21 @@ powershell -ExecutionPolicy Bypass -File .\setup_customer_environment.ps1
 
 ### 下载依赖失败
 
-通常是网络问题。可以稍后重试，或确认电脑能访问 GitHub、Python 包下载源和 npm 下载源。
+通常是网络问题。可以稍后重试，或确认电脑能访问 GitHub、Conda 下载源和 Python 包下载源。
+
+### 提示找不到 Conda
+
+如果电脑没有 Miniconda 或 Anaconda，请下载 `Miniconda3-latest-Windows-x86_64.exe`，放到 `D:\MangaAutoColorizerSetup`，然后重新运行：
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\setup_customer_environment.ps1
+```
+
+也可以手动指定安装器路径：
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\setup_customer_environment.ps1 -CondaInstaller D:\Downloads\Miniconda3-latest-Windows-x86_64.exe
+```
 
 ### 安装很慢
 

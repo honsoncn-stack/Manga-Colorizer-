@@ -155,7 +155,32 @@ function Install-Conda-IfNeeded {
     }
 
     if (-not (Test-NonEmpty $CondaInstaller)) {
-        throw "Conda was not found. Install Miniconda/Anaconda first, or pass -CondaInstaller path\to\Miniconda3-latest-Windows-x86_64.exe."
+        $localInstallers = @(
+            (Join-Path $PackageRoot "Miniconda3-latest-Windows-x86_64.exe"),
+            (Join-Path $PackageRoot "miniconda.exe"),
+            (Join-Path $PackageRoot "tools\Miniconda3-latest-Windows-x86_64.exe")
+        )
+        $CondaInstaller = Find-FirstExistingPath $localInstallers
+        if (-not (Test-NonEmpty $CondaInstaller)) {
+            $localInstallerMatches = @(Get-ChildItem -LiteralPath $PackageRoot -Filter "Miniconda3*Windows*x86_64*.exe" -File -ErrorAction SilentlyContinue | Sort-Object LastWriteTime -Descending)
+            if ($localInstallerMatches.Count -gt 0) {
+                $CondaInstaller = $localInstallerMatches[0].FullName
+            }
+        }
+    }
+
+    if (-not (Test-NonEmpty $CondaInstaller)) {
+        throw @"
+Conda was not found.
+
+For first-time users:
+1. Download Miniconda3-latest-Windows-x86_64.exe from https://docs.conda.io/en/latest/miniconda.html
+2. Put it next to this script in $PackageRoot
+3. Run this setup script again.
+
+Advanced users can also pass:
+powershell -ExecutionPolicy Bypass -File .\setup_customer_environment.ps1 -CondaInstaller D:\path\to\Miniconda3-latest-Windows-x86_64.exe
+"@
     }
     if (-not (Test-Path -LiteralPath $CondaInstaller)) {
         throw "Conda installer not found: $CondaInstaller"

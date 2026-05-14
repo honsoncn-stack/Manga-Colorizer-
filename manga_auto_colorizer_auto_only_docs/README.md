@@ -1,5 +1,7 @@
 # Manga Auto Colorizer
 
+> 历史资料说明：这个目录保存的是早期自动上色/Streamlit 流程文档，主要用于维护和回溯，不是当前 1.0 普通用户安装入口。普通用户请从 GitHub Release 下载 `Manga-Auto-Colorizer-1.0.0-user-kit.zip` 和桌面安装包。
+
 本项目是一个 **Windows 本地黑白漫画自动上色应用**。当前版本只保留 **普通自动上色 Auto 模式**，不做 reference 模式，不接 MangaNinjia，不需要参考图。
 
 ## 1. 项目定位

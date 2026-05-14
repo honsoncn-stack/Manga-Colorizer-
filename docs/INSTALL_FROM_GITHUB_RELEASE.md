@@ -9,6 +9,7 @@
 - Windows 10 或 Windows 11，64 位系统。
 - 建议有 D 盘，且至少 20 GB 可用空间。
 - 首次配置需要稳定网络。
+- 电脑需要 Conda；如果没有，下载 `Miniconda3-latest-Windows-x86_64.exe` 放到 `user-kit` 解压目录，脚本会自动安装。
 - CPU 可以运行；NVIDIA GPU 会更快，但不是必须。
 
 完整排查清单见 `SYSTEM_REQUIREMENTS.md` 或仓库里的 `docs/SYSTEM_REQUIREMENTS.md`。
@@ -27,23 +28,30 @@
 
 1. 解压 `Manga-Auto-Colorizer-1.0.0-user-kit.zip` 到 D 盘，例如 `D:\MangaAutoColorizerSetup`。
 2. 确认解压目录里有 `weights\generator.zip` 和 `weights\denoiser.pth`。
-3. 打开 PowerShell，运行：
+3. 如果电脑没有 Miniconda 或 Anaconda，请从 Miniconda 官网下载 `Miniconda3-latest-Windows-x86_64.exe`，放到 `D:\MangaAutoColorizerSetup`。文件名略有差异也可以，只要是 `Miniconda3...Windows...x86_64.exe`。
+4. 打开 PowerShell，运行：
 
 ```powershell
 cd D:\MangaAutoColorizerSetup
 powershell -ExecutionPolicy Bypass -File .\setup_customer_environment.ps1
 ```
 
-4. 运行 `Manga Auto Colorizer Setup 1.0.0.exe`。
-5. 安装目录建议选择 `D:\Programs\Manga Auto Colorizer`。
-6. 从桌面快捷方式启动 `Manga Auto Colorizer`。
+5. 运行 `Manga Auto Colorizer Setup 1.0.0.exe`。
+6. 安装目录建议选择 `D:\Programs\Manga Auto Colorizer`。
+7. 从桌面快捷方式启动 `Manga Auto Colorizer`。
+
+如果 Miniconda 安装器不在解压目录，也可以手动指定：
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\setup_customer_environment.ps1 -CondaInstaller D:\Downloads\Miniconda3-latest-Windows-x86_64.exe
+```
 
 ## 模型与致谢
 
 自动上色模型来自 `manga-colorization-v2`：
 https://github.com/qweasdd/manga-colorization-v2
 
-感谢原模型开发者的工作。本 Release 的 `user-kit.zip` 已内置 `generator.zip` 和 `denoiser.pth`，并会由配置脚本安装到本地项目目录。
+感谢原模型开发者的工作与授权支持。本 Release 的 `user-kit.zip` 已内置 `generator.zip` 和 `denoiser.pth`，并会由配置脚本安装到本地项目目录。
 
 ## 包含功能
 

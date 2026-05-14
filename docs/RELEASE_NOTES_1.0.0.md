@@ -55,6 +55,11 @@ The app expects the local project/runtime environment and model files to be
 prepared before the desktop shell is launched. Use the setup script inside
 `Manga-Auto-Colorizer-1.0.0-user-kit.zip`, then run the installer.
 
+If the computer does not already have Miniconda or Anaconda, place
+`Miniconda3-latest-Windows-x86_64.exe` next to the setup script before running
+it. The script also accepts similarly named `Miniconda3...Windows...x86_64.exe`
+installers in the same folder.
+
 The automatic colorization model is based on `manga-colorization-v2`:
 
 https://github.com/qweasdd/manga-colorization-v2

@@ -14,6 +14,33 @@ library/         本地书库说明文件；真实书库内容不提交
 external/        外部上色模型仓库子模块
 ```
 
+## 普通用户入口
+
+普通用户不要从仓库首页的 `Code` 按钮下载源码，也不要运行旧的 Streamlit 入口。推荐路径是：
+
+```text
+GitHub Release
+  -> Manga-Auto-Colorizer-1.0.0-user-kit.zip
+  -> setup_customer_environment.ps1
+  -> Manga Auto Colorizer Setup 1.0.0.exe
+```
+
+如果电脑没有 Conda，把 `Miniconda3-latest-Windows-x86_64.exe` 放到 `user-kit` 解压目录，环境脚本会自动安装到 `D:\Miniconda3`。
+
+## 历史和兼容路径
+
+以下路径保留用于维护、回溯或兼容旧流程，不是当前 1.0 普通用户主入口：
+
+```text
+app/streamlit_app.py
+app/ui_helpers.py
+configs/
+.streamlit/
+manga_auto_colorizer_auto_only_docs/
+```
+
+详情见 `docs/LEGACY_PATHS.md`。
+
 ## 前端结构
 
 ```text
