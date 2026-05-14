@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import ActionButton from "../components/ActionButton";
 import ConfirmDialog from "../components/ConfirmDialog";
 import EmptyState from "../components/EmptyState";
@@ -66,7 +66,6 @@ export default function Gallery({ libraryBooks = [], onOpenFolder }) {
   const [selectedImageKeys, setSelectedImageKeys] = useState([]);
   const [batchDeleteOpen, setBatchDeleteOpen] = useState(false);
   const [batchDeleting, setBatchDeleting] = useState(false);
-  const wheelTurnReadyRef = useRef(true);
 
   useEffect(() => {
     if (!selectedBookId && libraryBooks.length) {
@@ -190,43 +189,6 @@ export default function Gallery({ libraryBooks = [], onOpenFolder }) {
     [galleryData.total_pages]
   );
 
-  const handleGalleryWheel = useCallback(
-    (event) => {
-      if (loading || previewIndex >= 0) {
-        return;
-      }
-
-      const tagName = event.target?.tagName || "";
-      if (["BUTTON", "INPUT", "SELECT", "TEXTAREA"].includes(tagName)) {
-        return;
-      }
-
-      const dominantDelta = Math.abs(event.deltaY) >= Math.abs(event.deltaX) ? event.deltaY : event.deltaX;
-      if (Math.abs(dominantDelta) < 35) {
-        return;
-      }
-
-      event.preventDefault();
-      if (!wheelTurnReadyRef.current) {
-        return;
-      }
-
-      const currentGalleryPage = Number(galleryData.page || page || 1);
-      const totalGalleryPages = Math.max(Number(galleryData.total_pages || 1), 1);
-      const nextPage = dominantDelta > 0 ? currentGalleryPage + 1 : currentGalleryPage - 1;
-      if (nextPage < 1 || nextPage > totalGalleryPages) {
-        return;
-      }
-
-      wheelTurnReadyRef.current = false;
-      changePage(nextPage);
-      window.setTimeout(() => {
-        wheelTurnReadyRef.current = true;
-      }, 320);
-    },
-    [changePage, galleryData.page, galleryData.total_pages, loading, page, previewIndex]
-  );
-
   return (
     <div className="page-stack gallery-layout">
       <MangaCard title="图库" subtitle="分页查看临时彩图和书库彩页。鼠标放在图片区可用滚轮翻页。">
@@ -317,7 +279,7 @@ export default function Gallery({ libraryBooks = [], onOpenFolder }) {
           </div>
         ) : null}
 
-        <div className="gallery-wheel-area" onWheel={handleGalleryWheel}>
+        <div>
           {error ? (
             <EmptyState title="图库读取失败" description={error} />
           ) : (

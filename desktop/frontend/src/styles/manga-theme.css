@@ -1371,16 +1371,6 @@ body::after {
   margin-bottom: 14px;
 }
 
-.gallery-wheel-area {
-  border-radius: 18px;
-  overscroll-behavior: contain;
-  transition: box-shadow 160ms ease;
-}
-
-.gallery-wheel-area:hover {
-  box-shadow: 0 0 0 4px rgba(210, 81, 194, 0.1);
-}
-
 .gallery-action-strip {
   display: flex;
   justify-content: space-between;

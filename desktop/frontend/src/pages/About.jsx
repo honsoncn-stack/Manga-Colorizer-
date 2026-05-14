@@ -10,6 +10,13 @@ export default function About() {
           <li>可以上色当前页、后续几页或整本漫画。</li>
           <li>生成的彩色页会保存在本地书库，不会上传到云端。</li>
           <li>需要分享时，可以导出完整 PDF：已上色页使用彩色结果，未上色页自动用黑白原图补齐。</li>
+          <li>
+            GitHub 开源项目：
+            <a href="https://github.com/honsoncn-stack/Manga-Colorizer-" target="_blank" rel="noreferrer">
+              https://github.com/honsoncn-stack/Manga-Colorizer-
+            </a>
+          </li>
+          <li>开发者：Ray的练琴时光（全平台同名）</li>
         </ul>
       </MangaCard>
     </div>

@@ -1046,13 +1046,15 @@ def api_library_export_pdf(book_id: str) -> dict[str, object]:
             color_pages += 1
         elif manifest_page_path(book_id, page_number, color=False).exists():
             bw_fallback_pages += 1
+    cache_buster = int(export_path.stat().st_mtime) if export_path.exists() else 0
     return {
         "ok": True,
         "path": str(export_path),
-        "previewUrl": f"{APP_BASE_URL}/media/library/{book_id}/export/colorized_book.pdf",
+        "previewUrl": f"{APP_BASE_URL}/media/library/{book_id}/export/colorized_book.pdf?v={cache_buster}",
         "totalPages": total_pages,
         "colorPages": color_pages,
         "bwFallbackPages": bw_fallback_pages,
+        "cacheBuster": cache_buster,
     }
 
 

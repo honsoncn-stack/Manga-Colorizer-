@@ -28,6 +28,9 @@ function formatPdfExportMessage(result) {
   if (!totalPages) {
     return "PDF 导出完成。";
   }
+  if (!colorPages) {
+    return `完整 PDF 导出完成：共 ${totalPages} 页。当前没有阅读器彩色缓存，本次全部使用黑白原图。`;
+  }
   return `完整 PDF 导出完成：共 ${totalPages} 页，${colorPages} 页使用彩色结果，${bwFallbackPages} 页用黑白原图补齐。`;
 }
 
@@ -52,12 +55,14 @@ export default function Reader({
   const [loadError, setLoadError] = useState("");
   const [statusText, setStatusText] = useState("");
   const [pageLoading, setPageLoading] = useState(false);
+  const readerCanvasRef = useRef(null);
   const wheelTurnReadyRef = useRef(true);
 
   const totalPages = manifest?.total_pages || 0;
   const colorizedCount = manifest?.colorized_pages?.length || 0;
   const currentPage = pageData?.page_number || manifest?.current_page || 1;
   const hasColorPage = Boolean(pageData?.color_image_url);
+  const isCurrentBookColorizing = Boolean(readerJobStatus?.running && readerJobStatus?.book_id === currentBookId);
   const displayUrl = viewMode === "color" && pageData?.color_image_url ? pageData.color_image_url : pageData?.bw_image_url;
 
   const loadBook = useCallback(
@@ -150,7 +155,14 @@ export default function Reader({
 
   const handleReaderWheel = useCallback(
     (event) => {
-      if (!readerSettings.wheelPageTurn || !manifest || busy || pageLoading) {
+      if (!readerSettings.wheelPageTurn) {
+        return;
+      }
+
+      event.preventDefault();
+      event.stopPropagation();
+
+      if (!manifest || busy || pageLoading) {
         return;
       }
 
@@ -159,7 +171,6 @@ export default function Reader({
         return;
       }
 
-      event.preventDefault();
       if (!wheelTurnReadyRef.current) {
         return;
       }
@@ -180,6 +191,18 @@ export default function Reader({
     },
     [busy, currentPage, goToPage, manifest, pageLoading, readerSettings.wheelPageTurn, totalPages]
   );
+
+  useEffect(() => {
+    const canvas = readerCanvasRef.current;
+    if (!canvas || !readerSettings.wheelPageTurn) {
+      return undefined;
+    }
+
+    canvas.addEventListener("wheel", handleReaderWheel, { passive: false });
+    return () => {
+      canvas.removeEventListener("wheel", handleReaderWheel);
+    };
+  }, [handleReaderWheel, readerSettings.wheelPageTurn]);
 
   const runAction = useCallback(
     async (work, successMessage) => {
@@ -417,7 +440,13 @@ export default function Reader({
                 >
                   整本上色
                 </ActionButton>
-                <ActionButton variant="ghost" onClick={() => runAction(() => exportLibraryPdf(currentBookId), formatPdfExportMessage)}>
+                <ActionButton
+                  variant="ghost"
+                  loading={busy}
+                  disabled={isCurrentBookColorizing}
+                  hint={isCurrentBookColorizing ? "上色任务完成后再导出，避免漏掉刚生成的彩页" : "彩页优先，未上色页用黑白原图补齐"}
+                  onClick={() => runAction(() => exportLibraryPdf(currentBookId), formatPdfExportMessage)}
+                >
                   导出完整 PDF
                 </ActionButton>
                 <ActionButton variant="ghost" onClick={() => openFolder(`library\\books\\${currentBookId}`)}>
@@ -435,8 +464,8 @@ export default function Reader({
                 <div>快捷键：→ / Space 翻页，← 上一页，滚轮翻页，B 切换黑白彩色，C 上色当前页</div>
               </div>
               <div
+                ref={readerCanvasRef}
                 className={`reader-canvas zoom-${readerSettings.defaultZoom}${readerSettings.wheelPageTurn ? " wheel-page-turn" : ""}`}
-                onWheel={handleReaderWheel}
               >
                 {pageLoading ? <div className="reader-loading">正在加载页面...</div> : null}
                 {displayUrl ? <img src={displayUrl} alt={`${manifest.title} 第 ${currentPage} 页`} className="reader-page-image" /> : null}

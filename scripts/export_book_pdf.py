@@ -38,11 +38,12 @@ def main() -> int:
     export_dir = book_root(args.book_id) / "export"
     export_dir.mkdir(parents=True, exist_ok=True)
     out_path = export_dir / "colorized_book.pdf"
+    temp_path = export_dir / "colorized_book.tmp.pdf"
 
     if total_pages <= 0:
         raise FileNotFoundError(f"Book has no pages: {args.book_id}")
 
-    pdf = canvas.Canvas(str(out_path), pageCompression=1)
+    pdf = canvas.Canvas(str(temp_path), pageCompression=1)
     color_pages = 0
     bw_fallback_pages = 0
     for page_number in range(1, total_pages + 1):
@@ -61,6 +62,7 @@ def main() -> int:
         pdf.drawImage(ImageReader(image_buffer), 0, 0, width=width, height=height)
         pdf.showPage()
     pdf.save()
+    temp_path.replace(out_path)
     print(f"[OK] Exported complete PDF to {out_path}")
     print(f"[OK] Pages: total={total_pages}, color={color_pages}, bw_fallback={bw_fallback_pages}")
     return 0
