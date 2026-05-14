@@ -43,7 +43,7 @@ powershell -ExecutionPolicy Bypass -File .\setup_customer_environment.ps1
 自动上色模型来自 `manga-colorization-v2`：
 https://github.com/qweasdd/manga-colorization-v2
 
-感谢原模型开发者的工作与授权支持。本 Release 的 `user-kit.zip` 已内置经授权的 `generator.zip` 和 `denoiser.pth`，并会由配置脚本安装到本地项目目录。
+感谢原模型开发者的工作。本 Release 的 `user-kit.zip` 已内置 `generator.zip` 和 `denoiser.pth`，并会由配置脚本安装到本地项目目录。
 
 ## 包含功能
 
