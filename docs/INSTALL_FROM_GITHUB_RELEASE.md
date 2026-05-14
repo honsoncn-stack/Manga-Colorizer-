@@ -14,6 +14,15 @@ https://github.com/honsoncn-stack/Manga-Colorizer-/releases
 - `Manga Auto Colorizer Setup 1.0.0.exe`
 - `SHA256SUMS.txt`
 
+安装前建议先确认：
+
+- Windows 10 或 Windows 11，64 位系统。
+- 有 D 盘，且建议至少 20 GB 可用空间。
+- 首次配置需要稳定网络。
+- CPU 可以运行；NVIDIA GPU 会更快，但不是必须。
+
+完整清单见：`docs/SYSTEM_REQUIREMENTS.md`
+
 ## 安装步骤
 
 1. 解压 `Manga-Auto-Colorizer-1.0.0-user-kit.zip` 到 D 盘，例如：

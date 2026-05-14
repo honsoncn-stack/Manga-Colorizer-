@@ -63,6 +63,7 @@ Thanks to the original model developer for the work and authorization support.
 
 See:
 
+- `docs/SYSTEM_REQUIREMENTS.md`
 - `docs/PUBLIC_INSTALLATION.md`
 - `docs/PUBLIC_USER_GUIDE.md`
 - `LICENSE_NOTICE.md`

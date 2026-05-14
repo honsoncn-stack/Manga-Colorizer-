@@ -10,6 +10,8 @@
 
 推荐流程：
 
+安装前建议确认 Windows 10/11 64 位、D 盘至少 20 GB 可用空间，并保持网络稳定。完整清单见 `docs/SYSTEM_REQUIREMENTS.md`。
+
 1. 解压 `Manga-Auto-Colorizer-1.0.0-user-kit.zip` 到 D 盘任意目录，例如：
 
 ```text
