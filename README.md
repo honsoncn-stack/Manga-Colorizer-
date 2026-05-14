@@ -63,7 +63,6 @@ docs/               用户文档和发布说明
 - 普通用户：只看 Release 和 `docs/INSTALL_FROM_GITHUB_RELEASE.md`。
 - 反馈 Bug：去 Issues，优先使用 Bug 反馈模板。
 - 开发者：克隆仓库后看 `AGENTS.md`、`docs/REPOSITORY_STRUCTURE.md` 和 `docs/PACKAGING_DESKTOP.md`。
-- 不要把本地漫画、模型权重、生成图片、日志或安装包提交到仓库。
 
 ## 启动开发版
 
