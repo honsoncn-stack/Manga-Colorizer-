@@ -53,16 +53,18 @@ def main() -> int:
         (PROJECT_ROOT / "external" / "manga-colorization-v2", "manga-colorization-v2 repo"),
         (PROJECT_ROOT / "external" / "manga-colorization-v2" / "inference.py", "inference.py"),
         (PROJECT_ROOT / "models" / "downloads", "weight download directory"),
-        (PROJECT_ROOT / "input" / "pages_bw", "input/pages_bw"),
-        (PROJECT_ROOT / "input" / "pdf", "input/pdf"),
     ]:
         if not check_exists(path, label):
             failed = True
 
     for path, label in [
+        (PROJECT_ROOT / "input" / "pages_bw", "input/pages_bw"),
+        (PROJECT_ROOT / "input" / "pdf", "input/pdf"),
+        (PROJECT_ROOT / "input" / "cbz", "input/cbz"),
         (PROJECT_ROOT / "output", "output"),
         (PROJECT_ROOT / "logs", "logs"),
         (PROJECT_ROOT / "reports", "reports"),
+        (PROJECT_ROOT / "library" / "books", "library/books"),
     ]:
         if not check_writable(path, label):
             failed = True

@@ -24,6 +24,7 @@ param(
     [string]$Wheelhouse = "",
     [string]$TorchIndexUrl = "",
     [switch]$SkipPythonPackages,
+    [switch]$SkipTorchInstall,
     [switch]$SkipAppInstall,
     [switch]$SkipWeightInstall,
     [switch]$NonInteractive
@@ -47,6 +48,25 @@ function Write-Warn {
     param([string]$Message)
     Write-Host "[WARN] $Message" -ForegroundColor Yellow
 }
+
+$script:CorePythonDependencies = @(
+    [pscustomobject]@{ Module = "streamlit"; Package = "streamlit" },
+    [pscustomobject]@{ Module = "PIL"; Package = "pillow" },
+    [pscustomobject]@{ Module = "yaml"; Package = "pyyaml" },
+    [pscustomobject]@{ Module = "rich"; Package = "rich" },
+    [pscustomobject]@{ Module = "fastapi"; Package = "fastapi" },
+    [pscustomobject]@{ Module = "uvicorn"; Package = "uvicorn" },
+    [pscustomobject]@{ Module = "fitz"; Package = "pymupdf" },
+    [pscustomobject]@{ Module = "cv2"; Package = "opencv-python" },
+    [pscustomobject]@{ Module = "matplotlib"; Package = "matplotlib" },
+    [pscustomobject]@{ Module = "numpy"; Package = "numpy" },
+    [pscustomobject]@{ Module = "skimage"; Package = "scikit-image" }
+)
+
+$script:TorchPythonDependencies = @(
+    [pscustomobject]@{ Module = "torch"; Package = "torch" },
+    [pscustomobject]@{ Module = "torchvision"; Package = "torchvision" }
+)
 
 function Assert-DDrivePath {
     param([string]$PathValue, [string]$Label)
@@ -98,32 +118,82 @@ function Confirm-TargetCondaEnv {
         return
     }
 
-    Write-Host ""
-    Write-Host "Python/Torch environment selection" -ForegroundColor Cyan
+    Write-Step "Choosing Python/Torch environment"
     Write-Host "Default environment: $CondaEnvPath"
-    Write-Host "If you already have a Conda/Python environment with torch and torchvision installed,"
-    Write-Host "paste its python.exe path or environment folder now."
-    Write-Host "Example python.exe: D:\CondaEnvs\my-env\python.exe"
-    Write-Host "Example env folder: D:\CondaEnvs\my-env"
-    Write-Host "Command example: powershell -ExecutionPolicy Bypass -File .\setup_customer_environment.ps1 -CondaEnvPath D:\CondaEnvs\my-env"
-    Write-Host "Press Enter to use the default environment."
+    Write-Host "If you already have a D: drive Conda/Python environment, choose it here."
+    Write-Host "The script will check installed packages and only install missing pieces."
+    Write-Host ""
 
-    $userInput = Read-Host "Existing environment path or command"
+    $candidates = @(Find-CandidatePythonEnvs)
+    if ($candidates.Count -gt 0) {
+        Write-Host "Detected environments:" -ForegroundColor Cyan
+        for ($index = 0; $index -lt $candidates.Count; $index++) {
+            $candidate = $candidates[$index]
+            $status = Get-PythonEnvStatusText -EnvPath $candidate
+            Write-Host ("  [{0}] {1}  -  {2}" -f ($index + 1), $candidate, $status)
+        }
+        Write-Host ""
+        Write-Host "Type a number to reuse one of the environments above."
+    }
+
+    Write-Host "Or paste a D: drive environment folder / python.exe path."
+    Write-Host "Example env folder: D:\CondaEnvs\my-env"
+    Write-Host "Example python.exe: D:\CondaEnvs\my-env\python.exe"
+    Write-Host "Press Enter to use or create the default environment."
+    $userInput = Read-Host "Choose environment"
+
+    $chosenEnv = ""
     if (-not (Test-NonEmpty $userInput)) {
-        Write-Ok "Using default Conda environment: $CondaEnvPath"
+        $chosenEnv = [System.IO.Path]::GetFullPath($CondaEnvPath)
+    } elseif ($userInput.Trim() -match "^\d+$") {
+        $choiceIndex = [int]$userInput.Trim() - 1
+        if (($choiceIndex -lt 0) -or ($choiceIndex -ge $candidates.Count)) {
+            throw "Invalid environment number: $userInput"
+        }
+        $chosenEnv = $candidates[$choiceIndex]
+    } else {
+        $chosenEnv = Resolve-CondaEnvPathFromUserInput $userInput
+    }
+
+    Assert-DDrivePath $chosenEnv "CondaEnvPath"
+    $script:CondaEnvPath = $chosenEnv
+    Write-Ok "Selected Conda/Python environment: $script:CondaEnvPath"
+
+    $pythonExe = Join-Path $script:CondaEnvPath "python.exe"
+    if (-not (Test-Path -LiteralPath $pythonExe)) {
+        Write-Warn "python.exe was not found in the selected environment. The script will create it if Conda is available."
         return
     }
 
-    $resolvedEnv = Resolve-CondaEnvPathFromUserInput $userInput
-    Assert-DDrivePath $resolvedEnv "CondaEnvPath"
-    $script:CondaEnvPath = $resolvedEnv
-    Write-Ok "Using existing environment: $script:CondaEnvPath"
+    $coreModules = Get-DependencyModules $script:CorePythonDependencies
+    $torchModules = Get-DependencyModules $script:TorchPythonDependencies
+    $missingCore = @(Get-PythonMissingModules -PythonExe $pythonExe -Modules $coreModules)
+    $missingTorch = @(Get-PythonMissingModules -PythonExe $pythonExe -Modules $torchModules)
 
-    $pythonExe = Join-Path $script:CondaEnvPath "python.exe"
-    if (Test-PythonImports -PythonExe $pythonExe -Modules @("torch", "torchvision")) {
-        Write-Ok "Torch and torchvision were detected in the selected environment."
+    if ($missingCore.Count -eq 0) {
+        Write-Ok "App Python dependencies are already available."
     } else {
-        Write-Warn "Torch or torchvision was not detected in the selected environment. The script will install missing Python packages later."
+        Write-Warn "Missing app Python modules: $($missingCore -join ', ')"
+        if (-not $SkipPythonPackages) {
+            $answer = Read-Host "Install these missing app packages into this environment? [Y/n]"
+            if ((Test-NonEmpty $answer) -and $answer.Trim().ToLowerInvariant().StartsWith("n")) {
+                $script:SkipPythonPackages = $true
+                Write-Warn "Skipping app Python package installation by user choice."
+            }
+        }
+    }
+
+    if ($missingTorch.Count -eq 0) {
+        Write-Ok "Torch and torchvision are already available. Torch download will be skipped."
+    } else {
+        Write-Warn "Missing Torch modules: $($missingTorch -join ', ')"
+        if (-not $SkipTorchInstall) {
+            $answer = Read-Host "Install missing Torch packages automatically? This can download 1GB+ data. [Y/n]"
+            if ((Test-NonEmpty $answer) -and $answer.Trim().ToLowerInvariant().StartsWith("n")) {
+                $script:SkipTorchInstall = $true
+                Write-Warn "Skipping Torch installation by user choice. The app can open, but colorization may not work until Torch is installed."
+            }
+        }
     }
 }
 
@@ -181,15 +251,99 @@ function Invoke-Checked {
     }
 }
 
-function Test-PythonImports {
-    param([string]$PythonExe, [string[]]$Modules)
-    if (-not (Test-Path -LiteralPath $PythonExe)) {
-        return $false
+function Get-DependencyModules {
+    param([object[]]$Dependencies)
+    return @($Dependencies | ForEach-Object { $_.Module })
+}
+
+function Get-PackagesForMissingModules {
+    param([object[]]$Dependencies, [string[]]$MissingModules)
+    $missingSet = @{}
+    foreach ($module in $MissingModules) {
+        $missingSet[$module] = $true
     }
 
-    $importCode = ($Modules | ForEach-Object { "import $_" }) -join "; "
-    & $PythonExe -c $importCode > $null 2>&1
-    return ($LASTEXITCODE -eq 0)
+    $packages = @()
+    foreach ($dependency in $Dependencies) {
+        if ($missingSet.ContainsKey($dependency.Module)) {
+            $packages += $dependency.Package
+        }
+    }
+    return @($packages | Select-Object -Unique)
+}
+
+function Get-PythonMissingModules {
+    param([string]$PythonExe, [string[]]$Modules)
+    if (-not (Test-Path -LiteralPath $PythonExe)) {
+        return @($Modules)
+    }
+    if ($Modules.Count -eq 0) {
+        return @()
+    }
+
+    $moduleList = ($Modules | ForEach-Object { "'$($_.Replace("'", "\\'"))'" }) -join ", "
+    $importCode = @"
+import importlib.util
+modules = [$moduleList]
+missing = [name for name in modules if importlib.util.find_spec(name) is None]
+print("\n".join(missing))
+"@
+    $output = & $PythonExe -c $importCode 2>$null
+    if ($LASTEXITCODE -ne 0) {
+        return @($Modules)
+    }
+    return @($output | Where-Object { Test-NonEmpty $_ })
+}
+
+function Test-PythonImports {
+    param([string]$PythonExe, [string[]]$Modules)
+    $missing = @(Get-PythonMissingModules -PythonExe $PythonExe -Modules $Modules)
+    return ($missing.Count -eq 0)
+}
+
+function Find-CandidatePythonEnvs {
+    $candidates = @(
+        $CondaEnvPath,
+        $env:CONDA_PREFIX,
+        "D:\CondaEnvs\manga-color-v2"
+    )
+
+    foreach ($envRoot in @("D:\CondaEnvs", "D:\Miniconda3\envs", "D:\Anaconda3\envs")) {
+        if (Test-Path -LiteralPath $envRoot -PathType Container) {
+            $candidates += @(Get-ChildItem -LiteralPath $envRoot -Directory -ErrorAction SilentlyContinue | ForEach-Object { $_.FullName })
+        }
+    }
+
+    $valid = @()
+    foreach ($candidate in $candidates) {
+        if (-not (Test-NonEmpty $candidate)) {
+            continue
+        }
+        $fullPath = [System.IO.Path]::GetFullPath($candidate)
+        $pythonExe = Join-Path $fullPath "python.exe"
+        if (Test-Path -LiteralPath $pythonExe -PathType Leaf) {
+            $valid += $fullPath
+        }
+    }
+    return @($valid | Select-Object -Unique)
+}
+
+function Get-PythonEnvStatusText {
+    param([string]$EnvPath)
+    $pythonExe = Join-Path $EnvPath "python.exe"
+    $missingCore = @(Get-PythonMissingModules -PythonExe $pythonExe -Modules (Get-DependencyModules $script:CorePythonDependencies))
+    $missingTorch = @(Get-PythonMissingModules -PythonExe $pythonExe -Modules (Get-DependencyModules $script:TorchPythonDependencies))
+
+    if (($missingCore.Count -eq 0) -and ($missingTorch.Count -eq 0)) {
+        return "ready: app deps + Torch"
+    }
+    if (($missingCore.Count -eq 0) -and ($missingTorch.Count -gt 0)) {
+        return "app deps ready; missing Torch: $($missingTorch -join ', ')"
+    }
+    if (($missingCore.Count -gt 0) -and ($missingTorch.Count -eq 0)) {
+        return "Torch ready; missing app deps: $($missingCore -join ', ')"
+    }
+    return "missing app deps: $($missingCore -join ', '); missing Torch: $($missingTorch -join ', ')"
 }
 
 function Expand-SingleRootZip {
@@ -510,18 +664,26 @@ function Install-PythonEnvironment {
         Invoke-Checked -FilePath $pythonExe -Arguments @("-m", "ensurepip", "--upgrade") -WorkingDirectory $ProjectRoot
     }
 
-    $requirementsApp = Join-Path $ProjectRoot "requirements-app.txt"
-    if (Test-Path -LiteralPath $requirementsApp) {
-        Invoke-Checked -FilePath $pythonExe -Arguments ($pipArgsPrefix + @("-r", $requirementsApp)) -WorkingDirectory $ProjectRoot
+    $coreModules = Get-DependencyModules $script:CorePythonDependencies
+    $missingCore = @(Get-PythonMissingModules -PythonExe $pythonExe -Modules $coreModules)
+    if ($missingCore.Count -eq 0) {
+        Write-Ok "App Python dependencies already available. Skipping app package install."
+    } else {
+        $packagesToInstall = @(Get-PackagesForMissingModules -Dependencies $script:CorePythonDependencies -MissingModules $missingCore)
+        Write-Warn "Installing missing app packages: $($packagesToInstall -join ', ')"
+        Invoke-Checked -FilePath $pythonExe -Arguments ($pipArgsPrefix + $packagesToInstall) -WorkingDirectory $ProjectRoot
     }
 
-    $requiredPackages = @("fastapi", "uvicorn", "pymupdf", "pyyaml", "pillow", "opencv-python", "matplotlib", "numpy", "scikit-image")
-    Invoke-Checked -FilePath $pythonExe -Arguments ($pipArgsPrefix + $requiredPackages) -WorkingDirectory $ProjectRoot
-
-    if (Test-PythonImports -PythonExe $pythonExe -Modules @("torch", "torchvision")) {
+    $torchModules = Get-DependencyModules $script:TorchPythonDependencies
+    $missingTorch = @(Get-PythonMissingModules -PythonExe $pythonExe -Modules $torchModules)
+    if ($missingTorch.Count -eq 0) {
         Write-Ok "Torch and torchvision already available. Skipping Torch install."
+    } elseif ($SkipTorchInstall) {
+        Write-Warn "Skipping Torch installation. Missing modules: $($missingTorch -join ', ')"
     } else {
-        $torchArgs = $pipArgsPrefix + @("torch", "torchvision")
+        $torchPackagesToInstall = @(Get-PackagesForMissingModules -Dependencies $script:TorchPythonDependencies -MissingModules $missingTorch)
+        Write-Warn "Installing missing Torch packages: $($torchPackagesToInstall -join ', ')"
+        $torchArgs = $pipArgsPrefix + $torchPackagesToInstall
         if ((-not (Test-NonEmpty $Wheelhouse)) -and (Test-NonEmpty $TorchIndexUrl)) {
             $torchArgs += @("--index-url", $TorchIndexUrl)
         }
@@ -572,6 +734,25 @@ function Install-DesktopApp {
     }
 
     New-DesktopShortcutForApp -AppExe $appExe -WorkingDir $InstallDir
+}
+
+function Ensure-ProjectRuntimeDirectories {
+    Write-Step "Preparing runtime directories"
+    $runtimeDirs = @(
+        (Join-Path $ProjectRoot "input"),
+        (Join-Path $ProjectRoot "input\pages_bw"),
+        (Join-Path $ProjectRoot "input\pdf"),
+        (Join-Path $ProjectRoot "input\cbz"),
+        (Join-Path $ProjectRoot "output"),
+        (Join-Path $ProjectRoot "logs"),
+        (Join-Path $ProjectRoot "reports"),
+        (Join-Path $ProjectRoot "library"),
+        (Join-Path $ProjectRoot "library\books")
+    )
+    foreach ($dir in $runtimeDirs) {
+        Ensure-Directory $dir
+        Write-Ok "Runtime directory ready: $dir"
+    }
 }
 
 function Validate-Setup {
@@ -630,6 +811,7 @@ $env:TMP = "D:\Temp"
 $env:npm_config_cache = "D:\DevTools\ElectronLibs\npm-cache"
 
 Install-ProjectFiles
+Ensure-ProjectRuntimeDirectories
 Install-MangaColorizationRepo
 Install-Weights
 Install-PythonEnvironment

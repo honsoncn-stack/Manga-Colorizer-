@@ -63,10 +63,15 @@ installers in the same folder.
 Manual setup without the script is also documented for users who already have
 Conda, Python, or Torch configured. See `docs/MANUAL_INSTALLATION.md`.
 
-When the setup script runs interactively, it asks whether the user already has
-a D: drive Python/Conda environment with Torch installed. Users can paste that
-environment folder or its `python.exe` path; pressing Enter keeps the default
-environment. Automation users can pass `-NonInteractive`.
+When the setup script runs interactively, it scans common D: drive Conda
+environment folders and lets the user choose an existing environment by number.
+Users can also paste an environment folder or its `python.exe` path. The script
+checks Python modules first, installs only missing app packages, and skips Torch
+when `torch` and `torchvision` are already available. If Torch is missing, the
+script warns that the download can be large and asks before installing it. See
+`docs/ENV_REUSE_GUIDE.md`.
+
+Automation users can pass `-NonInteractive`.
 
 Useful official links:
 
@@ -84,6 +89,7 @@ Thanks to the original model developer for the work and authorization support.
 See:
 
 - `docs/SYSTEM_REQUIREMENTS.md`
+- `docs/ENV_REUSE_GUIDE.md`
 - `docs/MANUAL_INSTALLATION.md`
 - `docs/PUBLIC_INSTALLATION.md`
 - `docs/PUBLIC_USER_GUIDE.md`

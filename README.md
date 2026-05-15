@@ -97,7 +97,9 @@ https://github.com/honsoncn-stack/Manga-Colorizer-/releases
 
 安装步骤见：[GitHub Release 安装步骤](docs/INSTALL_FROM_GITHUB_RELEASE.md)
 
-不想运行配置脚本，或已经装过 Conda / Torch 的用户，可以看：[手动安装教程](docs/MANUAL_INSTALLATION.md)
+已经装过 Conda / Python / Torch 的用户，建议先看：[已有环境复用教程](docs/ENV_REUSE_GUIDE.md)
+
+不想运行配置脚本、想完全手动配置的用户，可以看：[手动安装教程](docs/MANUAL_INSTALLATION.md)
 
 安装前建议先看：[系统要求与排查清单](docs/SYSTEM_REQUIREMENTS.md)
 
@@ -105,7 +107,7 @@ https://github.com/honsoncn-stack/Manga-Colorizer-/releases
 
 环境配置脚本可以重复运行：已经存在的 Conda、项目文件、模型仓库、模型权重和桌面程序会跳过，只补齐缺失的部分。
 
-运行脚本时会提示你是否已有装好 Torch 的 Conda/Python 环境。已有环境的用户可以粘贴 `python.exe` 路径或环境目录；直接回车则使用默认环境 `D:\CondaEnvs\manga-color-v2`。
+运行脚本时会扫描 D 盘常见 Conda 环境，并提示你选择已有环境。脚本会检查缺哪些 Python 包，尽量只补缺失项；如果 `torch` 和 `torchvision` 已经存在，会跳过 Torch 下载。直接回车则使用默认环境 `D:\CondaEnvs\manga-color-v2`。
 
 ## 项目地址
 
@@ -221,6 +223,7 @@ library/books/<book_id>/export/colorized_book.pdf
 
 - [普通用户使用指南](docs/PUBLIC_USER_GUIDE.md)
 - [GitHub Release 安装步骤](docs/INSTALL_FROM_GITHUB_RELEASE.md)
+- [已有环境复用教程](docs/ENV_REUSE_GUIDE.md)
 - [手动安装教程](docs/MANUAL_INSTALLATION.md)
 - [系统要求与排查清单](docs/SYSTEM_REQUIREMENTS.md)
 - [公开版安装与环境配置](docs/PUBLIC_INSTALLATION.md)

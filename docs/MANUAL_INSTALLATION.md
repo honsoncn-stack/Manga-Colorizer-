@@ -2,6 +2,12 @@
 
 这个教程适合已经配置过部分 Python / Conda / Torch 环境，或者不想运行 `setup_customer_environment.ps1` 的用户。手动安装需要你自己确认每一步是否已经完成；已经有的东西不用重复安装。
 
+如果你只是想复用已有 D 盘环境，但仍希望脚本自动检查缺失项并补装缺失包，请优先看：
+
+```text
+docs/ENV_REUSE_GUIDE.md
+```
+
 ## 需要下载的文件和链接
 
 从本项目 Release 下载：

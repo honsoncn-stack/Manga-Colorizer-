@@ -7,7 +7,7 @@
 - Windows 10 或 Windows 11，64 位系统。
 - 建议使用 D 盘安装和运行。
 - 建议至少 20 GB 可用空间。
-- 首次配置需要稳定网络，用于安装 Python 依赖、Conda 环境和必要组件。
+- 首次配置需要稳定网络，用于安装 Python 依赖、Conda 环境和必要组件。若已有可用 Torch 环境，脚本会尽量复用并跳过重复下载。
 - 需要 Conda。已经安装 Miniconda/Anaconda 的用户可以直接运行脚本；没有 Conda 的用户，把 `Miniconda3-latest-Windows-x86_64.exe` 放到 `user-kit` 解压目录后再运行脚本。文件名略有差异也可以，只要是 `Miniconda3...Windows...x86_64.exe`。
 - 可以使用 CPU 运行；有 NVIDIA GPU 会更快，但不是必须。
 
@@ -52,6 +52,7 @@ weights\denoiser.pth
 5. PowerShell 是否能正常打开。
 6. 杀毒软件或 Windows Defender 是否拦截了脚本、安装包或下载文件。
 7. 是否已经安装 Conda，或者是否已把 `Miniconda3-latest-Windows-x86_64.exe` 放到 `D:\MangaAutoColorizerSetup`。
+8. 如果你已经有 Conda / Python / Torch 环境，先阅读 `docs/ENV_REUSE_GUIDE.md`，避免重复下载大型 Torch 依赖。
 
 ## 常见问题
 
@@ -88,6 +89,16 @@ powershell -ExecutionPolicy Bypass -File .\setup_customer_environment.ps1 -Conda
 ### 安装很慢
 
 第一次配置会创建 Conda 环境并安装 Python 包，耗时取决于网络、CPU 和硬盘速度。CPU 电脑也能运行，但上色速度会比 GPU 慢。
+
+如果电脑里已经有 D 盘 Conda / Python / Torch 环境，运行脚本时选择该环境。脚本会只补缺失 Python 包；如果 `torch` 和 `torchvision` 已经能导入，会跳过 Torch 下载。
+
+如果脚本提示：
+
+```text
+Install missing Torch packages automatically? This can download 1GB+ data. [Y/n]
+```
+
+不想马上下载 Torch 的用户可以输入 `n`。应用仍可打开和阅读，但自动上色需要之后手动安装 Torch。
 
 ### 应用能打开，但不能上色
 

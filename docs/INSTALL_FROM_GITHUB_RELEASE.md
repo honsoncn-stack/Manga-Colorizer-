@@ -38,7 +38,13 @@ powershell -ExecutionPolicy Bypass -File .\setup_customer_environment.ps1
 
 这个脚本可以重复运行。它会先检查已有环境，已经存在的 Conda、项目文件、模型仓库、模型权重和桌面程序会跳过，只补齐缺失的部分。
 
-脚本启动时会询问是否使用已有 Conda/Python 环境。如果你已经在某个 D 盘环境里装好了 `torch` 和 `torchvision`，可以直接粘贴该环境的 `python.exe` 路径或环境目录；直接回车则使用默认环境 `D:\CondaEnvs\manga-color-v2`。
+脚本启动时会扫描 D 盘常见 Conda 环境，并询问是否复用已有 Conda/Python 环境。如果你已经在某个 D 盘环境里装好了 `torch` 和 `torchvision`，可以输入扫描列表里的数字，也可以直接粘贴该环境的 `python.exe` 路径或环境目录；直接回车则使用默认环境 `D:\CondaEnvs\manga-color-v2`。
+
+脚本会检查缺哪些包，尽量只安装缺失项。如果 `torch` 和 `torchvision` 已经能导入，会跳过 Torch 下载。已有环境用户建议先看：
+
+```text
+docs/ENV_REUSE_GUIDE.md
+```
 
 提示出现时也可以粘贴完整命令里的环境参数，例如：
 
@@ -80,6 +86,12 @@ powershell -ExecutionPolicy Bypass -File .\setup_customer_environment.ps1 -NonIn
 docs/MANUAL_INSTALLATION.md
 ```
 
+如果只是想复用已有环境，但仍希望脚本帮你补缺失项，请优先看：
+
+```text
+docs/ENV_REUSE_GUIDE.md
+```
+
 常用官方链接：
 
 - Miniconda：https://www.anaconda.com/docs/getting-started/miniconda/install
@@ -114,6 +126,7 @@ https://github.com/qweasdd/manga-colorization-v2
 
 - 系统要求：`docs/SYSTEM_REQUIREMENTS.md`
 - GitHub Release 安装步骤：`docs/INSTALL_FROM_GITHUB_RELEASE.md`
+- 已有环境复用教程：`docs/ENV_REUSE_GUIDE.md`
 - 手动安装教程：`docs/MANUAL_INSTALLATION.md`
 - 使用指南：`docs/PUBLIC_USER_GUIDE.md`
 - 安装与环境：`docs/PUBLIC_INSTALLATION.md`
