@@ -241,13 +241,13 @@ library/books/<book_id>/export/colorized_book.pdf
 
 https://github.com/qweasdd/manga-colorization-v2
 
-感谢原模型开发者的工作与授权支持。本仓库的桌面阅读器、书库、队列、导出和本地产品化流程在此基础上做了集成。
+感谢原模型开发者的工作。本仓库的桌面阅读器、书库、队列、导出和本地产品化流程在此基础上做了集成。
 
 ## 许可证说明
 
 本项目当前按 1.0 免费公开测试版分享。由于上游模型、外部代码和部分依赖存在各自的许可证边界，本仓库暂不把所有内容统一声明为 MIT、Apache 或其他宽松许可证。
 
-Release 用户配置包内置经授权的模型权重；Git 提交只追踪代码和文档，不追踪大体积二进制权重文件。外部模型、第三方代码和依赖遵循各自项目的许可证。发布、二次分发或商业使用前，请先阅读 [LICENSE_NOTICE.md](LICENSE_NOTICE.md) 和 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)。
+Release 用户配置包内置模型权重；Git 提交只追踪代码和文档，不追踪大体积二进制权重文件。外部模型、第三方代码和依赖遵循各自项目的许可证。发布、二次分发或商业使用前，请先阅读 [LICENSE_NOTICE.md](LICENSE_NOTICE.md) 和 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)。
 
 ## 开发者
 
