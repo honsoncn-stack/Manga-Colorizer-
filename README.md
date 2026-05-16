@@ -17,7 +17,7 @@ Windows 本地漫画阅读与自动上色工具。导入本地漫画后，可以
 
 ## 应用界面展示
 
-下面是 Manga Auto Colorizer 1.0 的主要界面，按日常使用顺序展示。
+下面是 Manga Auto Colorizer&Reader 1.0 的主要界面，按日常使用顺序展示。
 
 ### 1. 阅读器总览
 
