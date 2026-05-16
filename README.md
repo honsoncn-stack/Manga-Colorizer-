@@ -21,7 +21,7 @@ Windows 本地漫画阅读与自动上色工具。导入本地漫画后，可以
 
 ### 1. 阅读器总览
 
-查看本机环境、模型状态、书库数量、最近阅读和常用入口。
+查看本机环境、模型状态、书库数量、最近阅读和常用入口。(这里更新后已经换成gpu运行了）
 
 <p align="center">
   <img src="docs/assets/app-showcase/01-overview.png" width="860" alt="Manga Auto Colorizer 阅读器总览界面">
