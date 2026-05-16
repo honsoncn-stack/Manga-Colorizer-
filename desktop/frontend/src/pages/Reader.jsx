@@ -70,6 +70,8 @@ export default function Reader({
   const [loadError, setLoadError] = useState("");
   const [statusText, setStatusText] = useState("");
   const [pageLoading, setPageLoading] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const readerStageRef = useRef(null);
   const readerCanvasRef = useRef(null);
   const wheelTurnReadyRef = useRef(true);
 
@@ -174,6 +176,36 @@ export default function Reader({
       setViewMode("bw");
     }
   }, [hasColorPage, viewMode]);
+
+  useEffect(() => {
+    const syncFullscreenState = () => {
+      setIsFullscreen(document.fullscreenElement === readerStageRef.current);
+    };
+
+    document.addEventListener("fullscreenchange", syncFullscreenState);
+    return () => document.removeEventListener("fullscreenchange", syncFullscreenState);
+  }, []);
+
+  const toggleFullscreenReading = useCallback(async () => {
+    const stage = readerStageRef.current;
+    if (!stage) {
+      return;
+    }
+
+    try {
+      if (document.fullscreenElement === stage) {
+        await document.exitFullscreen();
+        return;
+      }
+      if (document.fullscreenElement) {
+        await document.exitFullscreen();
+      }
+      await stage.requestFullscreen();
+    } catch (error) {
+      console.error(error);
+      setLoadError(error instanceof Error ? error.message : "无法进入全屏阅读模式。");
+    }
+  }, []);
 
   const goToPage = useCallback(
     async (pageNumber) => {
@@ -507,14 +539,16 @@ export default function Reader({
               </div>
             </aside>
 
-            <div className="reader-stage">
+            <div ref={readerStageRef} className={`reader-stage ${isFullscreen ? "is-reader-fullscreen" : ""}`.trim()}>
               <div className="reader-stage-meta">
                 <div>{progressText}</div>
-                <div>快捷键：→ / Space 下一跨页，← 上一跨页，滚轮翻页，B 切换黑白/彩色，C 上色当前跨页</div>
+                <div>快捷键：→ / Space 下一跨页，← 上一跨页，滚轮翻页，B 切换黑白/彩色，C 上色当前跨页，双击画面全屏</div>
               </div>
               <div
                 ref={readerCanvasRef}
                 className={`reader-canvas zoom-${readerSettings.defaultZoom}${readerSettings.wheelPageTurn ? " wheel-page-turn" : ""}`}
+                onDoubleClick={toggleFullscreenReading}
+                title="双击进入或退出全屏阅读"
               >
                 {pageLoading ? <div className="reader-loading">正在加载页面...</div> : null}
                 <div className="reader-spread">
