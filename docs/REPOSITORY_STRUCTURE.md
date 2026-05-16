@@ -25,7 +25,7 @@ GitHub Release
   -> Manga Auto Colorizer Setup 1.0.0.exe
 ```
 
-如果电脑没有 Conda，把 `Miniconda3-latest-Windows-x86_64.exe` 放到 `user-kit` 解压目录，环境脚本会自动安装到 `D:\Miniconda3`。
+如果电脑没有 Conda，把 `Miniconda3-latest-Windows-x86_64.exe` 放到 `user-kit` 解压后包含 `setup_customer_environment.ps1` 的目录，环境脚本会自动安装到 `D:\Miniconda3`。
 
 ## 历史和兼容路径
 

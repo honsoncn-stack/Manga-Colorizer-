@@ -42,12 +42,12 @@ D:\Programs\Manga Auto Colorizer
 D:\MangaAutoColorizerSetup
 ```
 
-确认里面有这些文件：
+进入解压后的 `user-kit-1.0.0` 文件夹。按推荐方式解压时，确认里面有这些文件：
 
 ```text
-D:\MangaAutoColorizerSetup\manga-auto-colorizer-project.zip
-D:\MangaAutoColorizerSetup\weights\generator.zip
-D:\MangaAutoColorizerSetup\weights\denoiser.pth
+D:\MangaAutoColorizerSetup\user-kit-1.0.0\manga-auto-colorizer-project.zip
+D:\MangaAutoColorizerSetup\user-kit-1.0.0\weights\generator.zip
+D:\MangaAutoColorizerSetup\user-kit-1.0.0\weights\denoiser.pth
 ```
 
 ## 2. 准备项目源码
@@ -56,7 +56,7 @@ D:\MangaAutoColorizerSetup\weights\denoiser.pth
 
 ```powershell
 New-Item -ItemType Directory -Path D:\AIProjects -Force
-Expand-Archive -LiteralPath D:\MangaAutoColorizerSetup\manga-auto-colorizer-project.zip -DestinationPath D:\AIProjects -Force
+Expand-Archive -LiteralPath D:\MangaAutoColorizerSetup\user-kit-1.0.0\manga-auto-colorizer-project.zip -DestinationPath D:\AIProjects -Force
 ```
 
 方式 B：使用 Git 克隆公开仓库。
@@ -112,6 +112,7 @@ D:\CondaEnvs\my-env\python.exe
 如果你已经知道命令，也可以在脚本提示里粘贴这一整段，脚本会识别 `-CondaEnvPath` 后面的路径：
 
 ```powershell
+cd D:\MangaAutoColorizerSetup\user-kit-1.0.0
 powershell -ExecutionPolicy Bypass -File .\setup_customer_environment.ps1 -CondaEnvPath D:\CondaEnvs\my-env
 ```
 
@@ -170,10 +171,10 @@ New-Item -ItemType Directory -Path D:\AIProjects\manga-auto-colorizer\models\dow
 复制权重：
 
 ```powershell
-Copy-Item D:\MangaAutoColorizerSetup\weights\generator.zip D:\AIProjects\manga-auto-colorizer\external\manga-colorization-v2\networks\generator.zip -Force
-Copy-Item D:\MangaAutoColorizerSetup\weights\denoiser.pth D:\AIProjects\manga-auto-colorizer\external\manga-colorization-v2\denoising\models\net_rgb.pth -Force
-Copy-Item D:\MangaAutoColorizerSetup\weights\generator.zip D:\AIProjects\manga-auto-colorizer\models\downloads\generator.zip -Force
-Copy-Item D:\MangaAutoColorizerSetup\weights\denoiser.pth D:\AIProjects\manga-auto-colorizer\models\downloads\denoiser.pth -Force
+Copy-Item D:\MangaAutoColorizerSetup\user-kit-1.0.0\weights\generator.zip D:\AIProjects\manga-auto-colorizer\external\manga-colorization-v2\networks\generator.zip -Force
+Copy-Item D:\MangaAutoColorizerSetup\user-kit-1.0.0\weights\denoiser.pth D:\AIProjects\manga-auto-colorizer\external\manga-colorization-v2\denoising\models\net_rgb.pth -Force
+Copy-Item D:\MangaAutoColorizerSetup\user-kit-1.0.0\weights\generator.zip D:\AIProjects\manga-auto-colorizer\models\downloads\generator.zip -Force
+Copy-Item D:\MangaAutoColorizerSetup\user-kit-1.0.0\weights\denoiser.pth D:\AIProjects\manga-auto-colorizer\models\downloads\denoiser.pth -Force
 ```
 
 ## 8. 检查环境

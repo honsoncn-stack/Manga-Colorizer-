@@ -9,7 +9,7 @@
 - Windows 10 或 Windows 11，64 位系统。
 - 建议有 D 盘，且至少 20 GB 可用空间。
 - 首次配置需要稳定网络。
-- 电脑需要 Conda；如果没有，下载 `Miniconda3-latest-Windows-x86_64.exe` 放到 `user-kit` 解压目录，脚本会自动安装。
+- 电脑需要 Conda；如果没有，下载 `Miniconda3-latest-Windows-x86_64.exe` 放到 `user-kit` 解压后包含 `setup_customer_environment.ps1` 的目录，脚本会自动安装。
 - CPU 可以运行；NVIDIA GPU 会更快，但需要 CUDA 版 PyTorch。当前 1.0 Release 脚本只正式支持 NVIDIA CUDA 加速，AMD / Intel 显卡默认走 CPU 模式。
 
 完整排查清单见 `SYSTEM_REQUIREMENTS.md` 或仓库里的 `docs/SYSTEM_REQUIREMENTS.md`。
@@ -27,18 +27,22 @@
 ## 安装流程
 
 1. 解压 `Manga-Auto-Colorizer-1.0.0-user-kit.zip` 到 D 盘，例如 `D:\MangaAutoColorizerSetup`。
-2. 确认解压目录里有 `weights\generator.zip` 和 `weights\denoiser.pth`。
-3. 如果电脑没有 Miniconda 或 Anaconda，请从 Miniconda 官网下载 `Miniconda3-latest-Windows-x86_64.exe`，放到 `D:\MangaAutoColorizerSetup`。文件名略有差异也可以，只要是 `Miniconda3...Windows...x86_64.exe`。
-4. 打开 PowerShell，运行：
+2. 进入解压后的 `user-kit-1.0.0` 文件夹。按推荐方式解压时，实际脚本目录是 `D:\MangaAutoColorizerSetup\user-kit-1.0.0`。
+3. 确认这个目录里有 `setup_customer_environment.ps1`，并且有 `weights\generator.zip` 和 `weights\denoiser.pth`。
+4. 如果电脑没有 Miniconda 或 Anaconda，请从 Miniconda 官网下载 `Miniconda3-latest-Windows-x86_64.exe`，放到 `D:\MangaAutoColorizerSetup\user-kit-1.0.0`。文件名略有差异也可以，只要是 `Miniconda3...Windows...x86_64.exe`。
+5. 打开 PowerShell，运行：
 
 ```powershell
-cd D:\MangaAutoColorizerSetup
+cd D:\MangaAutoColorizerSetup\user-kit-1.0.0
 powershell -ExecutionPolicy Bypass -File .\setup_customer_environment.ps1
 ```
+
+如果 PowerShell 提示 `.\setup_customer_environment.ps1` 不存在，说明当前目录不对。请先进入包含 `setup_customer_environment.ps1` 的文件夹，再运行命令。
 
 如果你已经有 Conda / Python / Torch 环境，建议先用体检模式看脚本会识别到什么。体检模式不会下载或安装任何东西：
 
 ```powershell
+cd D:\MangaAutoColorizerSetup\user-kit-1.0.0
 powershell -ExecutionPolicy Bypass -File .\setup_customer_environment.ps1 -PlanOnly
 ```
 
@@ -57,6 +61,7 @@ docs/ENV_REUSE_GUIDE.md
 提示出现时也可以粘贴完整命令里的环境参数，例如：
 
 ```powershell
+cd D:\MangaAutoColorizerSetup\user-kit-1.0.0
 powershell -ExecutionPolicy Bypass -File .\setup_customer_environment.ps1 -CondaEnvPath D:\CondaEnvs\my-env
 ```
 
@@ -67,12 +72,14 @@ powershell -ExecutionPolicy Bypass -File .\setup_customer_environment.ps1 -Conda
 如果 Miniconda 安装器不在解压目录，也可以手动指定：
 
 ```powershell
+cd D:\MangaAutoColorizerSetup\user-kit-1.0.0
 powershell -ExecutionPolicy Bypass -File .\setup_customer_environment.ps1 -CondaInstaller D:\Downloads\Miniconda3-latest-Windows-x86_64.exe
 ```
 
 如果你想在无人值守或批处理里运行，不想出现交互提示，可以加：
 
 ```powershell
+cd D:\MangaAutoColorizerSetup\user-kit-1.0.0
 powershell -ExecutionPolicy Bypass -File .\setup_customer_environment.ps1 -NonInteractive
 ```
 

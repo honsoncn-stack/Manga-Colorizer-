@@ -32,13 +32,13 @@
 D:\MangaAutoColorizerSetup
 ```
 
-确认里面至少有：
+进入解压后的 `user-kit-1.0.0` 文件夹。按推荐方式解压时，确认里面至少有：
 
 ```text
-D:\MangaAutoColorizerSetup\setup_customer_environment.ps1
-D:\MangaAutoColorizerSetup\manga-auto-colorizer-project.zip
-D:\MangaAutoColorizerSetup\weights\generator.zip
-D:\MangaAutoColorizerSetup\weights\denoiser.pth
+D:\MangaAutoColorizerSetup\user-kit-1.0.0\setup_customer_environment.ps1
+D:\MangaAutoColorizerSetup\user-kit-1.0.0\manga-auto-colorizer-project.zip
+D:\MangaAutoColorizerSetup\user-kit-1.0.0\weights\generator.zip
+D:\MangaAutoColorizerSetup\user-kit-1.0.0\weights\denoiser.pth
 ```
 
 ## 第 2 步：检查自己有没有可复用环境
@@ -81,7 +81,7 @@ D:\Anaconda3\envs\my-env
 如果你想先看看脚本会识别到哪些环境、准备复用什么，而不想立刻安装任何东西，可以先运行体检模式：
 
 ```powershell
-cd D:\MangaAutoColorizerSetup
+cd D:\MangaAutoColorizerSetup\user-kit-1.0.0
 powershell -ExecutionPolicy Bypass -File .\setup_customer_environment.ps1 -PlanOnly
 ```
 
@@ -90,7 +90,7 @@ powershell -ExecutionPolicy Bypass -File .\setup_customer_environment.ps1 -PlanO
 打开 PowerShell：
 
 ```powershell
-cd D:\MangaAutoColorizerSetup
+cd D:\MangaAutoColorizerSetup\user-kit-1.0.0
 powershell -ExecutionPolicy Bypass -File .\setup_customer_environment.ps1
 ```
 
@@ -206,18 +206,21 @@ N
 如果你已经确定要用哪个环境，也可以直接写在命令里：
 
 ```powershell
+cd D:\MangaAutoColorizerSetup\user-kit-1.0.0
 powershell -ExecutionPolicy Bypass -File .\setup_customer_environment.ps1 -CondaEnvPath D:\CondaEnvs\my-env
 ```
 
 如果你确定暂时不装 Torch：
 
 ```powershell
+cd D:\MangaAutoColorizerSetup\user-kit-1.0.0
 powershell -ExecutionPolicy Bypass -File .\setup_customer_environment.ps1 -CondaEnvPath D:\CondaEnvs\my-env -SkipTorchInstall
 ```
 
 如果你确定 Python 包也不让脚本安装：
 
 ```powershell
+cd D:\MangaAutoColorizerSetup\user-kit-1.0.0
 powershell -ExecutionPolicy Bypass -File .\setup_customer_environment.ps1 -CondaEnvPath D:\CondaEnvs\my-env -SkipPythonPackages -SkipTorchInstall
 ```
 

@@ -115,7 +115,7 @@ https://github.com/honsoncn-stack/Manga-Colorizer-/releases
 
 安装前建议先看：[系统要求与排查清单](docs/SYSTEM_REQUIREMENTS.md)
 
-如果电脑没有安装 Conda，请先下载 `Miniconda3-latest-Windows-x86_64.exe`，放到 `user-kit` 解压目录，再运行环境配置脚本。脚本会自动安装到 `D:\Miniconda3`。如果下载到的文件名略有不同，只要是 `Miniconda3...Windows...x86_64.exe`，也可以直接放在解压目录。
+如果电脑没有安装 Conda，请先下载 `Miniconda3-latest-Windows-x86_64.exe`，放到 `user-kit` 解压后包含 `setup_customer_environment.ps1` 的目录。按推荐方式解压时，这个目录通常是 `D:\MangaAutoColorizerSetup\user-kit-1.0.0`。脚本会自动安装到 `D:\Miniconda3`。如果下载到的文件名略有不同，只要是 `Miniconda3...Windows...x86_64.exe`，也可以直接放在这个目录。
 
 环境配置脚本可以重复运行：已经存在的 Conda、项目文件、模型仓库、模型权重和桌面程序会跳过，只补齐缺失的部分。
 
@@ -126,6 +126,7 @@ https://github.com/honsoncn-stack/Manga-Colorizer-/releases
 已有环境用户可以先运行体检模式，确认脚本会识别到哪些环境，体检模式不会下载或安装任何东西：
 
 ```powershell
+cd D:\MangaAutoColorizerSetup\user-kit-1.0.0
 powershell -ExecutionPolicy Bypass -File .\setup_customer_environment.ps1 -PlanOnly
 ```
 

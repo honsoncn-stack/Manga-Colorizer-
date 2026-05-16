@@ -8,7 +8,7 @@
 - 建议使用 D 盘安装和运行。
 - 建议至少 20 GB 可用空间。
 - 首次配置需要稳定网络，用于安装 Python 依赖、Conda 环境和必要组件。若已有可用 Torch 环境，脚本会尽量复用并跳过重复下载。
-- 需要 Conda。已经安装 Miniconda/Anaconda 的用户可以直接运行脚本；没有 Conda 的用户，把 `Miniconda3-latest-Windows-x86_64.exe` 放到 `user-kit` 解压目录后再运行脚本。文件名略有差异也可以，只要是 `Miniconda3...Windows...x86_64.exe`。
+- 需要 Conda。已经安装 Miniconda/Anaconda 的用户可以直接运行脚本；没有 Conda 的用户，把 `Miniconda3-latest-Windows-x86_64.exe` 放到 `user-kit` 解压后包含 `setup_customer_environment.ps1` 的目录后再运行脚本。文件名略有差异也可以，只要是 `Miniconda3...Windows...x86_64.exe`。
 - 可以使用 CPU 运行；有 NVIDIA GPU 会更快，但需要 NVIDIA 驱动正常，并且所选 Python 环境里安装的是 CUDA 版 PyTorch。
 - 当前 1.0 Release 脚本只正式支持 NVIDIA CUDA 加速。AMD / Intel 显卡用户默认走 CPU 模式；后续 2.0 可以再做 ROCm / XPU / DirectML 的实验支持。
 
@@ -52,13 +52,14 @@ weights\denoiser.pth
 4. 网络是否能访问 GitHub、Conda 和 Python 包下载源。
 5. PowerShell 是否能正常打开。
 6. 杀毒软件或 Windows Defender 是否拦截了脚本、安装包或下载文件。
-7. 是否已经安装 Conda，或者是否已把 `Miniconda3-latest-Windows-x86_64.exe` 放到 `D:\MangaAutoColorizerSetup`。
+7. 是否已经安装 Conda，或者是否已把 `Miniconda3-latest-Windows-x86_64.exe` 放到 `D:\MangaAutoColorizerSetup\user-kit-1.0.0`。
 8. 如果你已经有 Conda / Python / Torch 环境，先阅读 `docs/ENV_REUSE_GUIDE.md`，避免重复下载大型 Torch 依赖。
 9. 如果想用 NVIDIA GPU，上色前建议在 PowerShell 里运行 `nvidia-smi`。如果命令不存在或报错，需要先安装或更新 NVIDIA 驱动。AMD / Intel 显卡在 1.0 中按 CPU 用户处理。
 
 已有环境用户可以先运行体检模式，确认脚本会识别到哪个环境：
 
 ```powershell
+cd D:\MangaAutoColorizerSetup\user-kit-1.0.0
 powershell -ExecutionPolicy Bypass -File .\setup_customer_environment.ps1 -PlanOnly
 ```
 
@@ -71,6 +72,16 @@ powershell -ExecutionPolicy Bypass -File .\setup_customer_environment.ps1 -PlanO
 请使用安装说明中的命令：
 
 ```powershell
+cd D:\MangaAutoColorizerSetup\user-kit-1.0.0
+powershell -ExecutionPolicy Bypass -File .\setup_customer_environment.ps1
+```
+
+### PowerShell 提示脚本文件不存在
+
+先确认你在包含 `setup_customer_environment.ps1` 的目录里。按推荐方式解压时，需要先运行：
+
+```powershell
+cd D:\MangaAutoColorizerSetup\user-kit-1.0.0
 powershell -ExecutionPolicy Bypass -File .\setup_customer_environment.ps1
 ```
 
@@ -84,15 +95,17 @@ powershell -ExecutionPolicy Bypass -File .\setup_customer_environment.ps1
 
 ### 提示找不到 Conda
 
-如果电脑没有 Miniconda 或 Anaconda，请下载 `Miniconda3-latest-Windows-x86_64.exe`，放到 `D:\MangaAutoColorizerSetup`，然后重新运行：
+如果电脑没有 Miniconda 或 Anaconda，请下载 `Miniconda3-latest-Windows-x86_64.exe`，放到 `D:\MangaAutoColorizerSetup\user-kit-1.0.0`，然后重新运行：
 
 ```powershell
+cd D:\MangaAutoColorizerSetup\user-kit-1.0.0
 powershell -ExecutionPolicy Bypass -File .\setup_customer_environment.ps1
 ```
 
 也可以手动指定安装器路径：
 
 ```powershell
+cd D:\MangaAutoColorizerSetup\user-kit-1.0.0
 powershell -ExecutionPolicy Bypass -File .\setup_customer_environment.ps1 -CondaInstaller D:\Downloads\Miniconda3-latest-Windows-x86_64.exe
 ```
 
@@ -140,6 +153,7 @@ D:\AIProjects\manga-auto-colorizer\external\manga-colorization-v2\denoising\mode
 如果这些文件不存在，重新解压 `user-kit.zip`，确认 `weights` 文件夹存在，然后重新运行：
 
 ```powershell
+cd D:\MangaAutoColorizerSetup\user-kit-1.0.0
 powershell -ExecutionPolicy Bypass -File .\setup_customer_environment.ps1
 ```
 

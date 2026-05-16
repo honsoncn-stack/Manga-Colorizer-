@@ -18,23 +18,31 @@
 D:\MangaAutoColorizerSetup
 ```
 
-2. `user-kit.zip` 已包含上色所需权重文件：
+2. 进入解压后的 `user-kit-1.0.0` 文件夹。按推荐方式解压时，脚本目录通常是：
 
 ```text
-D:\MangaAutoColorizerSetup\weights\generator.zip
-D:\MangaAutoColorizerSetup\weights\denoiser.pth
+D:\MangaAutoColorizerSetup\user-kit-1.0.0
+```
+
+`user-kit.zip` 已包含上色所需权重文件：
+
+```text
+D:\MangaAutoColorizerSetup\user-kit-1.0.0\weights\generator.zip
+D:\MangaAutoColorizerSetup\user-kit-1.0.0\weights\denoiser.pth
 ```
 
 如果你手动替换过配置包，确认 `weights` 文件夹里仍然保留这两个文件后再运行脚本。
 
-3. 如果电脑没有 Miniconda 或 Anaconda，请下载 `Miniconda3-latest-Windows-x86_64.exe`，放到 `D:\MangaAutoColorizerSetup`。文件名略有差异也可以，只要是 `Miniconda3...Windows...x86_64.exe`。
+3. 如果电脑没有 Miniconda 或 Anaconda，请下载 `Miniconda3-latest-Windows-x86_64.exe`，放到 `D:\MangaAutoColorizerSetup\user-kit-1.0.0`。文件名略有差异也可以，只要是 `Miniconda3...Windows...x86_64.exe`。
 
 4. 在解压目录运行环境配置脚本：
 
 ```powershell
-cd D:\MangaAutoColorizerSetup
+cd D:\MangaAutoColorizerSetup\user-kit-1.0.0
 powershell -ExecutionPolicy Bypass -File .\setup_customer_environment.ps1
 ```
+
+如果 PowerShell 提示 `.\setup_customer_environment.ps1` 不存在，说明当前目录不对。请先进入包含 `setup_customer_environment.ps1` 的文件夹，再运行命令。
 
 脚本可以重复运行。它会先检查 Conda、项目目录、模型仓库、模型权重和桌面程序；已经准备好的部分会跳过，只补齐缺失的文件或环境。
 
@@ -49,6 +57,7 @@ docs/ENV_REUSE_GUIDE.md
 如果只想先看环境识别结果，不想立刻安装任何东西，可以先运行：
 
 ```powershell
+cd D:\MangaAutoColorizerSetup\user-kit-1.0.0
 powershell -ExecutionPolicy Bypass -File .\setup_customer_environment.ps1 -PlanOnly
 ```
 
@@ -57,6 +66,7 @@ powershell -ExecutionPolicy Bypass -File .\setup_customer_environment.ps1 -PlanO
 也可以在提示里粘贴完整命令中的环境参数，例如：
 
 ```powershell
+cd D:\MangaAutoColorizerSetup\user-kit-1.0.0
 powershell -ExecutionPolicy Bypass -File .\setup_customer_environment.ps1 -CondaEnvPath D:\CondaEnvs\my-env
 ```
 
