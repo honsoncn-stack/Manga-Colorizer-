@@ -27,7 +27,19 @@ Windows 本地漫画阅读与自动上色工具。导入本地漫画后，可以
   <img src="docs/assets/app-showcase/01-overview.png" width="860" alt="Manga Auto Colorizer 阅读器总览界面">
 </p>
 
-### 2. 书架
+### 2. 阅读器
+
+双页阅读、跨页上色与整本缓存集中在这里。阅读时可以使用键盘快捷键、滚轮翻页、黑白/彩色切换、缩放和双击全屏。
+
+<p align="center">
+  <img src="docs/assets/app-showcase/02-reader.png" width="860" alt="Manga Auto Colorizer 阅读器双页阅读界面">
+</p>
+
+<p align="center">
+  <img src="docs/assets/app-showcase/03-reader-fullscreen.png" width="860" alt="Manga Auto Colorizer 阅读器全屏阅读界面">
+</p>
+
+### 3. 书架
 
 展示已保存的书籍，可继续阅读、全书上色、导出处理后的 PDF，也支持书库删减。
 
@@ -35,7 +47,7 @@ Windows 本地漫画阅读与自动上色工具。导入本地漫画后，可以
   <img src="docs/assets/app-showcase/02-library.png" width="860" alt="Manga Auto Colorizer 书架界面">
 </p>
 
-### 3. 本地书库导入
+### 4. 本地书库导入
 
 支持导入图片文件夹、PDF 或 CBZ，并建立本地漫画阅读书架。
 
@@ -43,7 +55,7 @@ Windows 本地漫画阅读与自动上色工具。导入本地漫画后，可以
   <img src="docs/assets/app-showcase/03-import.png" width="860" alt="Manga Auto Colorizer 本地书库导入界面">
 </p>
 
-### 4. 上色队列
+### 5. 上色队列
 
 查看当前处理图片、上色进度、任务状态和等待队列。
 
@@ -51,7 +63,7 @@ Windows 本地漫画阅读与自动上色工具。导入本地漫画后，可以
   <img src="docs/assets/app-showcase/04-queue.png" width="860" alt="Manga Auto Colorizer 上色队列界面">
 </p>
 
-### 5. 彩图预览
+### 6. 彩图预览
 
 分页查看渲染后的彩图输出，并按书籍、文件夹切换不同输出结果。
 
@@ -59,7 +71,7 @@ Windows 本地漫画阅读与自动上色工具。导入本地漫画后，可以
   <img src="docs/assets/app-showcase/05-gallery.png" width="860" alt="Manga Auto Colorizer 彩图预览界面">
 </p>
 
-### 6. 运行记录
+### 7. 运行记录
 
 集中查看上色、阅读器和应用运行记录，方便定位问题和反馈 Bug。
 
@@ -67,7 +79,7 @@ Windows 本地漫画阅读与自动上色工具。导入本地漫画后，可以
   <img src="docs/assets/app-showcase/06-logs.png" width="860" alt="Manga Auto Colorizer 运行记录界面">
 </p>
 
-### 7. 设置
+### 8. 设置
 
 管理输出路径、PDF 路径、日志路径、阅读偏好和缓存清理。
 
@@ -75,7 +87,7 @@ Windows 本地漫画阅读与自动上色工具。导入本地漫画后，可以
   <img src="docs/assets/app-showcase/07-settings.png" width="860" alt="Manga Auto Colorizer 设置界面">
 </p>
 
-### 8. 使用说明
+### 9. 使用说明
 
 内置基础使用说明、GitHub 开源地址、Bug 反馈入口和开发者信息。
 
