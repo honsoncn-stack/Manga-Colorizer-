@@ -7,9 +7,9 @@ Windows desktop manga reader and automatic colorization workflow.
 
 - Electron desktop app with React frontend.
 - Local library import for image folders, PDF, and CBZ.
-- Reader page navigation, zoom, black-white/color toggle, and keyboard
+- Reader double-page navigation, zoom, black-white/color toggle, and keyboard
   shortcuts.
-- Per-page, next-pages, and whole-book colorization task entry points.
+- Current-spread, next-spreads, and whole-book colorization task entry points.
 - Queue/status page for current task state and logs.
 - Paginated Gallery for temporary color pages and library color pages.
 - Full PDF export: colored pages use cached color results, uncolored pages fall
@@ -66,10 +66,14 @@ Conda, Python, or Torch configured. See `docs/MANUAL_INSTALLATION.md`.
 When the setup script runs interactively, it scans common D: drive Conda
 environment folders and lets the user choose an existing environment by number.
 Users can also paste an environment folder or its `python.exe` path. The script
-checks Python modules first, installs only missing app packages, and skips Torch
-when `torch` and `torchvision` are already available. If Torch is missing, the
-script warns that the download can be large and asks before installing it. See
-`docs/ENV_REUSE_GUIDE.md`.
+checks Python modules first, installs only missing app packages, and checks
+whether Torch is CUDA-capable before deciding to skip it. If Torch is missing,
+the script warns that the download can be large and asks before installing it.
+If an NVIDIA GPU is detected but the selected environment has CPU-only Torch,
+the script asks whether to reinstall CUDA Torch. See `docs/ENV_REUSE_GUIDE.md`.
+GPU acceleration in 1.0 is NVIDIA CUDA only. AMD / Intel GPU users can still use
+the app through CPU mode; non-NVIDIA acceleration is reserved for a future
+experimental release.
 
 Automation users can pass `-NonInteractive`.
 

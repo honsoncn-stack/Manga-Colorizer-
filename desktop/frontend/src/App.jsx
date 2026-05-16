@@ -32,7 +32,7 @@ import {
 const pageMeta = {
   dashboard: { title: "阅读器总览", subtitle: "查看书库、阅读进度与自动上色状态" },
   library: { title: "本地书库", subtitle: "导入本地漫画并生成阅读缓存" },
-  reader: { title: "阅读器", subtitle: "本地单页阅读、上色与导出" },
+  reader: { title: "阅读器", subtitle: "本地双页阅读、跨页上色与导出" },
   queue: { title: "上色队列", subtitle: "查看上色进度、等待页和运行记录" },
   gallery: { title: "彩图预览", subtitle: "分页查看临时彩图和书库彩页" },
   logs: { title: "运行记录", subtitle: "查看上色、阅读器和应用运行记录" },
@@ -211,8 +211,10 @@ export default function App() {
           setCurrentPage("queue");
         }}
         onExportPdf={async (bookId) => {
-          await exportLibraryPdf(bookId);
+          const result = await exportLibraryPdf(bookId);
           await loadAll();
+          await openFolder(`library\\books\\${bookId}\\export`);
+          return result;
         }}
         onDeleteBook={async (bookId) => {
           await deleteLibraryBook(bookId);

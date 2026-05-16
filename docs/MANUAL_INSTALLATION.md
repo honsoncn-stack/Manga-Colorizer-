@@ -133,6 +133,14 @@ powershell -ExecutionPolicy Bypass -File .\setup_customer_environment.ps1 -Conda
 
 如果这条命令能输出版本号，就不要重复安装 Torch。
 
+如果想确认它是否会使用 NVIDIA GPU，再运行：
+
+```powershell
+& $py -c "import torch; print(torch.__version__); print(torch.version.cuda); print(torch.cuda.is_available()); print(torch.cuda.get_device_name(0) if torch.cuda.is_available() else 'CPU')"
+```
+
+如果 `torch.version.cuda` 是 `None`，或者 `torch.cuda.is_available()` 是 `False`，说明当前环境仍然会走 CPU。当前 1.0 只正式支持 NVIDIA CUDA 加速，AMD / Intel 显卡建议先使用 CPU 模式。
+
 如果失败，去 PyTorch 官方安装选择器选择适合自己电脑的命令：
 
 https://pytorch.org/get-started/locally/
@@ -143,7 +151,11 @@ CPU 版通常可以先尝试：
 & $py -m pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
 ```
 
-NVIDIA GPU 用户请以 PyTorch 官方选择器生成的 CUDA 命令为准。
+NVIDIA GPU 用户请以 PyTorch 官方选择器生成的 CUDA 命令为准。也可以先尝试 CUDA 12.8 轮子：
+
+```powershell
+& $py -m pip install --upgrade --force-reinstall torch torchvision --index-url https://download.pytorch.org/whl/cu128
+```
 
 ## 7. 放置模型权重
 

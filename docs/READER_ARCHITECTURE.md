@@ -67,9 +67,11 @@ The frontend:
 The reader now includes:
 
 - auto-restore of the most recently read book
+- two-page spread display for the current page and next page
 - black-and-white / color view toggle
 - keyboard navigation
 - page jump with Enter
+- current-spread colorization, which submits up to two pages at once
 - lightweight page loading state
 - current colorization progress display
 

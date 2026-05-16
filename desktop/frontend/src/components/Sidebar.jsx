@@ -4,7 +4,7 @@ import StatusBadge from "./StatusBadge";
 const items = [
   { key: "dashboard", label: "总览", hint: "工作台主页", icon: LayoutDashboard },
   { key: "library", label: "书库", hint: "导入与管理", icon: Library },
-  { key: "reader", label: "阅读器", hint: "单页阅读", icon: BookOpen },
+  { key: "reader", label: "阅读器", hint: "双页阅读", icon: BookOpen },
   { key: "queue", label: "上色队列", hint: "进度与记录", icon: Sparkles },
   { key: "gallery", label: "图库", hint: "彩图预览", icon: Image },
   { key: "logs", label: "记录", hint: "运行记录", icon: ScrollText },

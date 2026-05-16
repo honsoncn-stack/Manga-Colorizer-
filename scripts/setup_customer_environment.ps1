@@ -23,10 +23,16 @@ param(
     [string]$WeightsSource = "",
     [string]$Wheelhouse = "",
     [string]$TorchIndexUrl = "",
+    [ValidateSet("auto", "cpu", "cuda")]
+    [string]$TorchVariant = "auto",
+    [string]$CudaTorchIndexUrl = "https://download.pytorch.org/whl/cu128",
+    [string]$CpuTorchIndexUrl = "https://download.pytorch.org/whl/cpu",
     [switch]$SkipPythonPackages,
     [switch]$SkipTorchInstall,
+    [switch]$ForceTorchInstall,
     [switch]$SkipAppInstall,
     [switch]$SkipWeightInstall,
+    [switch]$PlanOnly,
     [switch]$NonInteractive
 )
 
@@ -159,6 +165,13 @@ function Confirm-TargetCondaEnv {
     $script:CondaEnvPath = $chosenEnv
     Write-Ok "Selected Conda/Python environment: $script:CondaEnvPath"
 
+    $nvidiaDetected = Test-NvidiaGpuAvailable
+    if ($nvidiaDetected) {
+        Write-Ok "NVIDIA GPU detected by nvidia-smi. CUDA Torch is recommended for faster colorization."
+    } else {
+        Write-Warn "No NVIDIA GPU was detected by nvidia-smi. Version 1.0 only accelerates NVIDIA CUDA; AMD/Intel GPUs will use CPU mode unless you configure an experimental Torch backend yourself."
+    }
+
     $pythonExe = Join-Path $script:CondaEnvPath "python.exe"
     if (-not (Test-Path -LiteralPath $pythonExe)) {
         Write-Warn "python.exe was not found in the selected environment. The script will create it if Conda is available."
@@ -184,16 +197,161 @@ function Confirm-TargetCondaEnv {
     }
 
     if ($missingTorch.Count -eq 0) {
-        Write-Ok "Torch and torchvision are already available. Torch download will be skipped."
+        $torchStatus = Get-PythonTorchStatus -PythonExe $pythonExe
+        if ($torchStatus.CudaAvailable) {
+            Write-Ok "Torch CUDA is available. Torch download will be skipped. Device: $($torchStatus.DeviceName)"
+        } elseif ($nvidiaDetected -and (-not $SkipTorchInstall)) {
+            Write-Warn "Torch and torchvision exist, but this environment is CPU-only. Colorization will be much slower."
+            Write-Warn "Current Torch: $($torchStatus.TorchVersion), torch.version.cuda: $($torchStatus.TorchCudaVersion)"
+            $answer = Read-Host "Reinstall Torch with CUDA build now? This can download 1GB+ data. [Y/n]"
+            if ((Test-NonEmpty $answer) -and $answer.Trim().ToLowerInvariant().StartsWith("n")) {
+                Write-Warn "Keeping CPU Torch by user choice."
+            } else {
+                $script:ForceTorchInstall = $true
+                $script:TorchVariant = "cuda"
+                Write-Warn "Torch will be reinstalled with CUDA support."
+            }
+        } else {
+            Write-Warn "Torch and torchvision are available, but CUDA is not available. Torch download will be skipped."
+        }
     } else {
         Write-Warn "Missing Torch modules: $($missingTorch -join ', ')"
         if (-not $SkipTorchInstall) {
-            $answer = Read-Host "Install missing Torch packages automatically? This can download 1GB+ data. [Y/n]"
-            if ((Test-NonEmpty $answer) -and $answer.Trim().ToLowerInvariant().StartsWith("n")) {
+            $defaultTorchChoice = if ($nvidiaDetected) { "G" } else { "C" }
+            $answer = Read-Host "Install Torch for [G]PU CUDA / [C]PU only / [N]o? This can download 1GB+ data. Default: $defaultTorchChoice"
+            if (-not (Test-NonEmpty $answer)) {
+                $answer = $defaultTorchChoice
+            }
+            $normalizedAnswer = $answer.Trim().ToLowerInvariant()
+            if ($normalizedAnswer.StartsWith("n")) {
                 $script:SkipTorchInstall = $true
                 Write-Warn "Skipping Torch installation by user choice. The app can open, but colorization may not work until Torch is installed."
+            } elseif ($normalizedAnswer.StartsWith("g")) {
+                $script:TorchVariant = "cuda"
+                Write-Warn "Torch will be installed with CUDA support."
+            } elseif ($normalizedAnswer.StartsWith("c")) {
+                $script:TorchVariant = "cpu"
+                Write-Warn "Torch will be installed as CPU-only."
+            } else {
+                throw "Invalid Torch choice: $answer. Please choose G, C, or N."
             }
         }
+    }
+}
+
+function Show-EnvironmentPreflight {
+    Write-Step "Environment preflight"
+    Write-Host "This mode only checks your computer and prints a reuse plan. It will not install or download anything."
+    Write-Host ""
+    Write-Host "ProjectRoot: $ProjectRoot"
+    Write-Host "Default CondaEnvPath: $CondaEnvPath"
+    Write-Host "InstallDir: $InstallDir"
+    Write-Host ""
+
+    if (Test-NvidiaGpuAvailable) {
+        Write-Ok "NVIDIA GPU detected by nvidia-smi. CUDA Torch is recommended."
+    } else {
+        Write-Warn "No NVIDIA GPU detected by nvidia-smi. Version 1.0 will use CPU mode on AMD/Intel/non-NVIDIA machines."
+    }
+
+    $candidates = @(Find-CandidatePythonEnvs)
+    if ($candidates.Count -eq 0) {
+        Write-Warn "No existing D: drive Conda/Python environment was found."
+        Write-Host "Run the setup script without -PlanOnly and press Enter to create the default environment."
+        return
+    }
+
+    Write-Host ""
+    Write-Host "Detected reusable environments:" -ForegroundColor Cyan
+    for ($index = 0; $index -lt $candidates.Count; $index++) {
+        $candidate = $candidates[$index]
+        $status = Get-PythonEnvStatusText -EnvPath $candidate
+        Write-Host ("  [{0}] {1}  -  {2}" -f ($index + 1), $candidate, $status)
+    }
+
+    Write-Host ""
+    Write-Host "Next step:"
+    Write-Host "  1. Run the setup script again without -PlanOnly."
+    Write-Host "  2. Type the number of the environment you want to reuse, or paste a python.exe path."
+    Write-Host "  3. The script will ask before installing missing app packages or CUDA/CPU Torch."
+}
+
+function Confirm-InstallPlan {
+    if ($NonInteractive) {
+        return
+    }
+
+    Write-Step "Install plan review"
+    Write-Host "Nothing below has been installed yet in this step. Review the plan before continuing."
+    Write-Host ""
+    Write-Host "ProjectRoot: $ProjectRoot"
+    Write-Host "CondaEnvPath: $CondaEnvPath"
+    Write-Host "InstallDir: $InstallDir"
+    Write-Host ""
+
+    $nvidiaDetected = Test-NvidiaGpuAvailable
+    if ($nvidiaDetected) {
+        Write-Ok "NVIDIA GPU detected. Preferred Torch target: CUDA"
+    } else {
+        Write-Warn "NVIDIA GPU not detected. Preferred Torch target: CPU. AMD/Intel GPU acceleration is not part of the 1.0 release script."
+    }
+
+    $pythonExe = Join-Path $CondaEnvPath "python.exe"
+    if (Test-Path -LiteralPath $pythonExe -PathType Leaf) {
+        Write-Host "Python environment: existing"
+        $missingCore = @(Get-PythonMissingModules -PythonExe $pythonExe -Modules (Get-DependencyModules $script:CorePythonDependencies))
+        $missingTorch = @(Get-PythonMissingModules -PythonExe $pythonExe -Modules (Get-DependencyModules $script:TorchPythonDependencies))
+        $torchStatus = Get-PythonTorchStatus -PythonExe $pythonExe
+
+        if ($SkipPythonPackages) {
+            Write-Warn "App Python packages: skipped by user choice"
+        } elseif ($missingCore.Count -eq 0) {
+            Write-Ok "App Python packages: already available"
+        } else {
+            Write-Warn "App Python packages: will install missing modules: $($missingCore -join ', ')"
+        }
+
+        if ($SkipTorchInstall) {
+            Write-Warn "Torch: skipped by user choice"
+        } elseif ($ForceTorchInstall) {
+            Write-Warn "Torch: will reinstall $TorchVariant build from $(Resolve-TorchInstallIndexUrl)"
+        } elseif ($missingTorch.Count -gt 0) {
+            Write-Warn "Torch: will install missing modules for $TorchVariant build from $(Resolve-TorchInstallIndexUrl): $($missingTorch -join ', ')"
+        } elseif ($torchStatus.CudaAvailable) {
+            Write-Ok "Torch: CUDA already available, download skipped. Device: $($torchStatus.DeviceName)"
+        } else {
+            Write-Warn "Torch: CPU-only already available, download skipped. Colorization will run on CPU unless CUDA Torch is installed."
+        }
+    } else {
+        Write-Warn "Python environment: does not exist yet, will create it if Conda is available."
+        if ($SkipPythonPackages) {
+            Write-Warn "App Python packages: skipped by user choice"
+        } else {
+            Write-Warn "App Python packages: will install into the new environment"
+        }
+        if ($SkipTorchInstall) {
+            Write-Warn "Torch: skipped by user choice"
+        } else {
+            Write-Warn "Torch: will install $TorchVariant build from $(Resolve-TorchInstallIndexUrl)"
+        }
+    }
+
+    Write-Host ""
+    if ($SkipWeightInstall) {
+        Write-Warn "Model weights: skipped by user choice"
+    } else {
+        Write-Host "Model weights: install only if missing"
+    }
+    if ($SkipAppInstall) {
+        Write-Warn "Desktop app: skipped by user choice"
+    } else {
+        Write-Host "Desktop app: install only if missing, then create/update shortcut"
+    }
+
+    Write-Host ""
+    $answer = Read-Host "Continue with this plan? [Y/n]"
+    if ((Test-NonEmpty $answer) -and $answer.Trim().ToLowerInvariant().StartsWith("n")) {
+        throw "Setup stopped by user before installation."
     }
 }
 
@@ -286,7 +444,8 @@ function Get-PythonMissingModules {
 import importlib.util
 modules = [$moduleList]
 missing = [name for name in modules if importlib.util.find_spec(name) is None]
-print("\n".join(missing))
+for name in missing:
+    print(name)
 "@
     $output = & $PythonExe -c $importCode 2>$null
     if ($LASTEXITCODE -ne 0) {
@@ -299,6 +458,101 @@ function Test-PythonImports {
     param([string]$PythonExe, [string[]]$Modules)
     $missing = @(Get-PythonMissingModules -PythonExe $PythonExe -Modules $Modules)
     return ($missing.Count -eq 0)
+}
+
+function Test-NvidiaGpuAvailable {
+    $nvidiaSmi = Find-CommandPath "nvidia-smi"
+    if (-not (Test-NonEmpty $nvidiaSmi)) {
+        return $false
+    }
+
+    $output = & $nvidiaSmi -L 2>$null
+    return (($LASTEXITCODE -eq 0) -and ($null -ne $output) -and (($output | Measure-Object).Count -gt 0))
+}
+
+function Get-PythonTorchStatus {
+    param([string]$PythonExe)
+    $status = [ordered]@{
+        HasTorch = $false
+        HasTorchvision = $false
+        CudaAvailable = $false
+        TorchVersion = ""
+        TorchvisionVersion = ""
+        TorchCudaVersion = ""
+        DeviceName = ""
+    }
+    if (-not (Test-Path -LiteralPath $PythonExe)) {
+        return [pscustomobject]$status
+    }
+
+    $code = @"
+try:
+    import torch
+    print('HasTorch=1')
+    print('TorchVersion=' + str(getattr(torch, '__version__', '')))
+    print('TorchCudaVersion=' + str(getattr(torch.version, 'cuda', '')))
+    cuda_available = bool(torch.cuda.is_available())
+    print('CudaAvailable=' + ('1' if cuda_available else '0'))
+    if cuda_available:
+        print('DeviceName=' + str(torch.cuda.get_device_name(0)))
+except Exception as exc:
+    print('HasTorch=0')
+try:
+    import torchvision
+    print('HasTorchvision=1')
+    print('TorchvisionVersion=' + str(getattr(torchvision, '__version__', '')))
+except Exception:
+    print('HasTorchvision=0')
+"@
+    $output = & $PythonExe -c $code 2>$null
+    if ($LASTEXITCODE -ne 0) {
+        return [pscustomobject]$status
+    }
+
+    foreach ($line in $output) {
+        if (-not (Test-NonEmpty $line)) {
+            continue
+        }
+        $parts = $line -split "=", 2
+        if ($parts.Count -ne 2) {
+            continue
+        }
+        $key = $parts[0]
+        $value = $parts[1]
+        switch ($key) {
+            "HasTorch" { $status.HasTorch = ($value -eq "1") }
+            "HasTorchvision" { $status.HasTorchvision = ($value -eq "1") }
+            "CudaAvailable" { $status.CudaAvailable = ($value -eq "1") }
+            "TorchVersion" { $status.TorchVersion = $value }
+            "TorchvisionVersion" { $status.TorchvisionVersion = $value }
+            "TorchCudaVersion" { $status.TorchCudaVersion = $value }
+            "DeviceName" { $status.DeviceName = $value }
+        }
+    }
+    return [pscustomobject]$status
+}
+
+function Resolve-TorchInstallIndexUrl {
+    if (Test-NonEmpty $TorchIndexUrl) {
+        return $TorchIndexUrl
+    }
+    if (Test-NonEmpty $Wheelhouse) {
+        return ""
+    }
+
+    $variant = $TorchVariant.ToLowerInvariant()
+    if ($variant -eq "auto") {
+        if (Test-NvidiaGpuAvailable) {
+            $variant = "cuda"
+        } else {
+            $variant = "cpu"
+        }
+    }
+
+    if ($variant -eq "cuda") {
+        return $CudaTorchIndexUrl
+    }
+    return $CpuTorchIndexUrl
 }
 
 function Find-CandidatePythonEnvs {
@@ -333,15 +587,23 @@ function Get-PythonEnvStatusText {
     $pythonExe = Join-Path $EnvPath "python.exe"
     $missingCore = @(Get-PythonMissingModules -PythonExe $pythonExe -Modules (Get-DependencyModules $script:CorePythonDependencies))
     $missingTorch = @(Get-PythonMissingModules -PythonExe $pythonExe -Modules (Get-DependencyModules $script:TorchPythonDependencies))
+    $torchStatus = Get-PythonTorchStatus -PythonExe $pythonExe
+    $torchText = if ($missingTorch.Count -gt 0) {
+        "missing Torch: $($missingTorch -join ', ')"
+    } elseif ($torchStatus.CudaAvailable) {
+        "Torch CUDA ready: $($torchStatus.DeviceName)"
+    } else {
+        "Torch CPU only"
+    }
 
     if (($missingCore.Count -eq 0) -and ($missingTorch.Count -eq 0)) {
-        return "ready: app deps + Torch"
+        return "ready: app deps + $torchText"
     }
     if (($missingCore.Count -eq 0) -and ($missingTorch.Count -gt 0)) {
-        return "app deps ready; missing Torch: $($missingTorch -join ', ')"
+        return "app deps ready; $torchText"
     }
     if (($missingCore.Count -gt 0) -and ($missingTorch.Count -eq 0)) {
-        return "Torch ready; missing app deps: $($missingCore -join ', ')"
+        return "$torchText; missing app deps: $($missingCore -join ', ')"
     }
     return "missing app deps: $($missingCore -join ', '); missing Torch: $($missingTorch -join ', ')"
 }
@@ -676,16 +938,31 @@ function Install-PythonEnvironment {
 
     $torchModules = Get-DependencyModules $script:TorchPythonDependencies
     $missingTorch = @(Get-PythonMissingModules -PythonExe $pythonExe -Modules $torchModules)
-    if ($missingTorch.Count -eq 0) {
-        Write-Ok "Torch and torchvision already available. Skipping Torch install."
+    if (($missingTorch.Count -eq 0) -and (-not $ForceTorchInstall)) {
+        $torchStatus = Get-PythonTorchStatus -PythonExe $pythonExe
+        if ($torchStatus.CudaAvailable) {
+            Write-Ok "Torch and torchvision already available with CUDA. Skipping Torch install. Device: $($torchStatus.DeviceName)"
+        } else {
+            Write-Ok "Torch and torchvision already available as CPU-only. Skipping Torch install."
+        }
     } elseif ($SkipTorchInstall) {
         Write-Warn "Skipping Torch installation. Missing modules: $($missingTorch -join ', ')"
     } else {
-        $torchPackagesToInstall = @(Get-PackagesForMissingModules -Dependencies $script:TorchPythonDependencies -MissingModules $missingTorch)
+        $torchPackagesToInstall = if ($missingTorch.Count -eq 0) {
+            @($script:TorchPythonDependencies | ForEach-Object { $_.Package })
+        } else {
+            @(Get-PackagesForMissingModules -Dependencies $script:TorchPythonDependencies -MissingModules $missingTorch)
+        }
         Write-Warn "Installing missing Torch packages: $($torchPackagesToInstall -join ', ')"
-        $torchArgs = $pipArgsPrefix + $torchPackagesToInstall
-        if ((-not (Test-NonEmpty $Wheelhouse)) -and (Test-NonEmpty $TorchIndexUrl)) {
-            $torchArgs += @("--index-url", $TorchIndexUrl)
+        $torchArgs = $pipArgsPrefix
+        if ($ForceTorchInstall) {
+            $torchArgs += @("--upgrade", "--force-reinstall")
+        }
+        $torchArgs += $torchPackagesToInstall
+        $resolvedTorchIndexUrl = Resolve-TorchInstallIndexUrl
+        if ((-not (Test-NonEmpty $Wheelhouse)) -and (Test-NonEmpty $resolvedTorchIndexUrl)) {
+            Write-Warn "Torch install index: $resolvedTorchIndexUrl"
+            $torchArgs += @("--index-url", $resolvedTorchIndexUrl)
         }
         Invoke-Checked -FilePath $pythonExe -Arguments $torchArgs -WorkingDirectory $ProjectRoot
     }
@@ -792,7 +1069,14 @@ $InstallDir = [System.IO.Path]::GetFullPath($InstallDir)
 Assert-DDrivePath $ProjectRoot "ProjectRoot"
 Assert-DDrivePath $CondaEnvPath "CondaEnvPath"
 Assert-DDrivePath $InstallDir "InstallDir"
+
+if ($PlanOnly) {
+    Show-EnvironmentPreflight
+    return
+}
+
 Confirm-TargetCondaEnv
+Confirm-InstallPlan
 
 Ensure-Directory "D:\Temp"
 Ensure-Directory "D:\AICache\pip"

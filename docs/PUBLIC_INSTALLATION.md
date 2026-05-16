@@ -40,11 +40,19 @@ powershell -ExecutionPolicy Bypass -File .\setup_customer_environment.ps1
 
 脚本启动时会扫描 D 盘常见 Conda 环境，并询问是否使用已有 Conda/Python 环境。如果你已经在某个 D 盘环境里装好了 `torch` 和 `torchvision`，可以输入扫描列表里的数字，也可以直接粘贴该环境的 `python.exe` 路径或环境目录；直接回车则使用默认环境。
 
-脚本会检查缺哪些 Python 包，尽量只安装缺失项。如果 `torch` 和 `torchvision` 已经能导入，会跳过 Torch 下载。已有环境用户请先看：
+脚本会检查缺哪些 Python 包，尽量只安装缺失项。如果 `torch` 和 `torchvision` 已经能导入，会继续检查是否为 CUDA 可用版本。NVIDIA 电脑如果检测到 CPU-only Torch，会提示是否重装 CUDA 版。当前 1.0 Release 脚本只正式支持 NVIDIA CUDA 加速，AMD / Intel 显卡默认走 CPU 模式。已有环境用户请先看：
 
 ```text
 docs/ENV_REUSE_GUIDE.md
 ```
+
+如果只想先看环境识别结果，不想立刻安装任何东西，可以先运行：
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\setup_customer_environment.ps1 -PlanOnly
+```
+
+正式安装前，脚本会显示安装计划并再次询问是否继续，避免用户误下载重复依赖。
 
 也可以在提示里粘贴完整命令中的环境参数，例如：
 

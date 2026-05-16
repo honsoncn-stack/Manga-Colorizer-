@@ -3,7 +3,6 @@ import ActionButton from "../components/ActionButton";
 import MangaCard from "../components/MangaCard";
 import StatusBadge from "../components/StatusBadge";
 import {
-  colorizeLibraryPage,
   colorizeLibraryRange,
   exportLibraryPdf,
   getLibraryBook,
@@ -64,6 +63,7 @@ export default function Reader({
 }) {
   const [manifest, setManifest] = useState(null);
   const [pageData, setPageData] = useState(null);
+  const [secondPageData, setSecondPageData] = useState(null);
   const [pageInput, setPageInput] = useState("1");
   const [viewMode, setViewMode] = useState("color");
   const [busy, setBusy] = useState(false);
@@ -76,9 +76,21 @@ export default function Reader({
   const totalPages = manifest?.total_pages || 0;
   const colorizedCount = manifest?.colorized_pages?.length || 0;
   const currentPage = pageData?.page_number || manifest?.current_page || 1;
-  const hasColorPage = Boolean(pageData?.color_image_url);
+  const spreadEndPage = Math.min(currentPage + 1, totalPages || currentPage);
+  const spreadPages = useMemo(() => [pageData, secondPageData].filter(Boolean), [pageData, secondPageData]);
+  const visibleSpreadPages = useMemo(() => {
+    if (readerSettings.readingDirection === "rtl") {
+      return [...spreadPages].reverse();
+    }
+    return spreadPages;
+  }, [readerSettings.readingDirection, spreadPages]);
+  const hasColorPage = spreadPages.some((page) => Boolean(page?.color_image_url));
+  const hasUncoloredSpreadPage = spreadPages.some((page) => !page?.is_colorized);
   const isCurrentBookColorizing = Boolean(readerJobStatus?.running && readerJobStatus?.book_id === currentBookId);
-  const displayUrl = viewMode === "color" && pageData?.color_image_url ? pageData.color_image_url : pageData?.bw_image_url;
+  const progressText = useMemo(() => {
+    const pageLabel = currentPage === spreadEndPage ? `${currentPage}` : `${currentPage}-${spreadEndPage}`;
+    return `第 ${pageLabel} / ${totalPages || 1} 页 · 已上色 ${colorizedCount} / ${totalPages || 1} 页`;
+  }, [colorizedCount, currentPage, spreadEndPage, totalPages]);
 
   const loadBook = useCallback(
     async (bookId, targetPage = null, options = {}) => {
@@ -86,6 +98,7 @@ export default function Reader({
       if (!bookId) {
         setManifest(null);
         setPageData(null);
+        setSecondPageData(null);
         setPageInput("1");
         setLoadError("");
         return;
@@ -100,9 +113,14 @@ export default function Reader({
         const safeTotalPages = Math.max(Number(nextManifest.total_pages || 1), 1);
         const rawPage = targetPage ?? Number(nextManifest.current_page || 1);
         const safePage = Math.min(Math.max(rawPage, 1), safeTotalPages);
-        const nextPage = await getLibraryBookPage(bookId, safePage);
+        const nextPageRequests = [getLibraryBookPage(bookId, safePage)];
+        if (safePage < safeTotalPages) {
+          nextPageRequests.push(getLibraryBookPage(bookId, safePage + 1));
+        }
+        const [nextPage, pairedPage = null] = await Promise.all(nextPageRequests);
         setManifest(nextManifest);
         setPageData(nextPage);
+        setSecondPageData(pairedPage);
         setPageInput(String(safePage));
         onBookLoaded?.(nextManifest);
       } catch (error) {
@@ -119,9 +137,10 @@ export default function Reader({
 
   useEffect(() => {
     if (!currentBookId) {
-      setManifest(null);
-      setPageData(null);
-      return;
+        setManifest(null);
+        setPageData(null);
+        setSecondPageData(null);
+        return;
     }
     loadBook(currentBookId).catch((error) => console.error(error));
   }, [currentBookId, loadBook]);
@@ -151,10 +170,10 @@ export default function Reader({
   ]);
 
   useEffect(() => {
-    if (!pageData?.color_image_url && viewMode === "color") {
+    if (!hasColorPage && viewMode === "color") {
       setViewMode("bw");
     }
-  }, [pageData?.color_image_url, viewMode]);
+  }, [hasColorPage, viewMode]);
 
   const goToPage = useCallback(
     async (pageNumber) => {
@@ -190,7 +209,7 @@ export default function Reader({
         return;
       }
 
-      const targetPage = dominantDelta > 0 ? currentPage + 1 : currentPage - 1;
+      const targetPage = dominantDelta > 0 ? currentPage + 2 : currentPage - 2;
       if (targetPage < 1 || targetPage > totalPages) {
         return;
       }
@@ -256,21 +275,24 @@ export default function Reader({
 
       if (event.key === "ArrowRight" || event.key === " ") {
         event.preventDefault();
-        goToPage(currentPage + 1).catch((error) => console.error(error));
+        goToPage(currentPage + 2).catch((error) => console.error(error));
       } else if (event.key === "ArrowLeft") {
         event.preventDefault();
-        goToPage(currentPage - 1).catch((error) => console.error(error));
+        goToPage(currentPage - 2).catch((error) => console.error(error));
       } else if (event.key.toLowerCase() === "b") {
         event.preventDefault();
         setViewMode((value) => (value === "bw" ? "color" : "bw"));
       } else if (event.key.toLowerCase() === "c") {
         event.preventDefault();
-        if (hasColorPage) {
-          setStatusText("当前页已有彩色缓存，已跳过。");
+        if (!hasUncoloredSpreadPage) {
+          setStatusText("当前跨页已有彩色缓存，已跳过。");
           return;
         }
         if (env?.weightsReady) {
-          runAction(() => colorizeLibraryPage(currentBookId, currentPage), "已提交当前页上色任务。");
+          runAction(
+            () => colorizeLibraryRange(currentBookId, currentPage, spreadEndPage),
+            (result) => formatColorizeMessage(result, "已提交当前跨页上色任务。")
+          );
         } else {
           setLoadError("模型权重缺失，当前无法执行上色。");
         }
@@ -282,13 +304,11 @@ export default function Reader({
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [busy, currentBookId, currentPage, env?.weightsReady, goToPage, hasColorPage, manifest, pageInput, runAction]);
-
-  const progressText = useMemo(() => `第 ${currentPage} / ${totalPages || 1} 页 · 已上色 ${colorizedCount} / ${totalPages || 1} 页`, [colorizedCount, currentPage, totalPages]);
+  }, [busy, currentBookId, currentPage, env?.weightsReady, goToPage, hasUncoloredSpreadPage, manifest, pageInput, runAction, spreadEndPage]);
 
   return (
     <div className="page-stack">
-      <MangaCard title="阅读器" subtitle="单页阅读、逐页上色与整本缓存。">
+      <MangaCard title="阅读器" subtitle="双页阅读、跨页上色与整本缓存。">
         {restoreState?.status === "loading" ? (
           <div className="gallery-status-empty">正在恢复最近阅读...</div>
         ) : restoreState?.status === "empty" ? (
@@ -340,11 +360,11 @@ export default function Reader({
               </div>
 
               <div className="reader-toolbar">
-                <ActionButton variant="secondary" disabled={currentPage <= 1 || pageLoading} onClick={() => goToPage(currentPage - 1)}>
-                  上一页
+                <ActionButton variant="secondary" disabled={currentPage <= 1 || pageLoading} onClick={() => goToPage(currentPage - 2)}>
+                  上一跨页
                 </ActionButton>
-                <ActionButton variant="secondary" disabled={currentPage >= totalPages || pageLoading} onClick={() => goToPage(currentPage + 1)}>
-                  下一页
+                <ActionButton variant="secondary" disabled={spreadEndPage >= totalPages || pageLoading} onClick={() => goToPage(currentPage + 2)}>
+                  下一跨页
                 </ActionButton>
               </div>
 
@@ -419,8 +439,8 @@ export default function Reader({
               </div>
 
               <div className="reader-toolbar reader-toolbar-wrap">
-                <StatusBadge tone={pageData?.is_colorized ? "ok" : "warn"}>
-                  {pageData?.is_colorized ? "当前页已有彩色缓存" : "当前页仍为黑白页"}
+                <StatusBadge tone={!hasUncoloredSpreadPage ? "ok" : "warn"}>
+                  {!hasUncoloredSpreadPage ? "当前跨页已有彩色缓存" : "当前跨页仍有黑白页"}
                 </StatusBadge>
                 <StatusBadge tone={env?.weightsReady ? "ok" : "missing"}>
                   {env?.weightsReady ? "模型可用" : "模型权重缺失"}
@@ -428,9 +448,18 @@ export default function Reader({
               </div>
 
               <div className="reader-toolbar reader-toolbar-wrap">
-                {!hasColorPage ? (
-                  <ActionButton loading={busy} disabled={!env?.weightsReady} onClick={() => runAction(() => colorizeLibraryPage(currentBookId, currentPage), "已提交当前页上色任务。")}>
-                    上色当前页
+                {hasUncoloredSpreadPage ? (
+                  <ActionButton
+                    loading={busy}
+                    disabled={!env?.weightsReady}
+                    onClick={() =>
+                      runAction(
+                        () => colorizeLibraryRange(currentBookId, currentPage, spreadEndPage),
+                        (result) => formatColorizeMessage(result, "已提交当前跨页上色任务。")
+                      )
+                    }
+                  >
+                    上色当前跨页
                   </ActionButton>
                 ) : null}
                 <ActionButton
@@ -439,12 +468,12 @@ export default function Reader({
                   disabled={!env?.weightsReady}
                   onClick={() =>
                     runAction(
-                      () => colorizeLibraryRange(currentBookId, currentPage, Math.min(currentPage + 4, totalPages)),
-                      (result) => formatColorizeMessage(result, "已提交后 5 页上色任务。")
+                      () => colorizeLibraryRange(currentBookId, currentPage, Math.min(currentPage + 5, totalPages)),
+                      (result) => formatColorizeMessage(result, "已提交后 3 组跨页上色任务。")
                     )
                   }
                 >
-                  上色后 5 页
+                  上色后 3 组跨页
                 </ActionButton>
                 <ActionButton
                   variant="secondary"
@@ -459,7 +488,13 @@ export default function Reader({
                   loading={busy}
                   disabled={isCurrentBookColorizing}
                   hint={isCurrentBookColorizing ? "上色任务完成后再导出，避免漏掉刚生成的彩页" : "彩页优先，未上色页用黑白原图补齐"}
-                  onClick={() => runAction(() => exportLibraryPdf(currentBookId), formatPdfExportMessage)}
+                  onClick={() =>
+                    runAction(async () => {
+                      const result = await exportLibraryPdf(currentBookId);
+                      await openFolder(`library\\books\\${currentBookId}\\export`);
+                      return result;
+                    }, formatPdfExportMessage)
+                  }
                 >
                   导出完整 PDF
                 </ActionButton>
@@ -475,14 +510,31 @@ export default function Reader({
             <div className="reader-stage">
               <div className="reader-stage-meta">
                 <div>{progressText}</div>
-                <div>快捷键：→ / Space 翻页，← 上一页，滚轮翻页，B 切换黑白彩色，C 上色当前页</div>
+                <div>快捷键：→ / Space 下一跨页，← 上一跨页，滚轮翻页，B 切换黑白/彩色，C 上色当前跨页</div>
               </div>
               <div
                 ref={readerCanvasRef}
                 className={`reader-canvas zoom-${readerSettings.defaultZoom}${readerSettings.wheelPageTurn ? " wheel-page-turn" : ""}`}
               >
                 {pageLoading ? <div className="reader-loading">正在加载页面...</div> : null}
-                {displayUrl ? <img src={displayUrl} alt={`${manifest.title} 第 ${currentPage} 页`} className="reader-page-image" /> : null}
+                <div className="reader-spread">
+                  {visibleSpreadPages.map((page) => {
+                    const displayUrl = viewMode === "color" && page.color_image_url ? page.color_image_url : page.bw_image_url;
+                    const displayModeLabel = viewMode === "color" && page.color_image_url ? "彩色" : "黑白";
+                    return (
+                      <figure key={page.page_number} className="reader-page-frame">
+                        {displayUrl ? (
+                          <img src={displayUrl} alt={`${manifest.title} 第 ${page.page_number} 页`} className="reader-page-image" />
+                        ) : (
+                          <div className="reader-loading">第 {page.page_number} 页暂不可用</div>
+                        )}
+                        <figcaption className="reader-page-caption">
+                          第 {page.page_number} 页 · {displayModeLabel}
+                        </figcaption>
+                      </figure>
+                    );
+                  })}
+                </div>
               </div>
             </div>
           </div>

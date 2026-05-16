@@ -56,7 +56,7 @@ desktop/frontend/src/
 
 ```text
 scripts/library_manager.py           导入图片文件夹、PDF、CBZ
-scripts/colorize_book_page.py        阅读器单页上色
+scripts/colorize_book_page.py        阅读器单页上色底层脚本，跨页上色会连续调用
 scripts/colorize_book_batch.py       阅读器批量上色
 scripts/export_book_pdf.py           导出完整 PDF
 scripts/build_desktop_installer.ps1  构建安装包和便携版

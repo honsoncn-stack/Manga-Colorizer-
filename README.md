@@ -107,7 +107,15 @@ https://github.com/honsoncn-stack/Manga-Colorizer-/releases
 
 环境配置脚本可以重复运行：已经存在的 Conda、项目文件、模型仓库、模型权重和桌面程序会跳过，只补齐缺失的部分。
 
-运行脚本时会扫描 D 盘常见 Conda 环境，并提示你选择已有环境。脚本会检查缺哪些 Python 包，尽量只补缺失项；如果 `torch` 和 `torchvision` 已经存在，会跳过 Torch 下载。直接回车则使用默认环境 `D:\CondaEnvs\manga-color-v2`。
+运行脚本时会扫描 D 盘常见 Conda 环境，并提示你选择已有环境。脚本会检查缺哪些 Python 包，尽量只补缺失项；如果检测到 NVIDIA GPU，会优先建议安装 CUDA 版 Torch；如果已有环境里的 Torch 是 CPU 版，也会提示是否重装 CUDA 版。直接回车则使用默认环境 `D:\CondaEnvs\manga-color-v2`。
+
+判断是否真正使用 GPU，不是看电脑有没有显卡，而是看所选环境里 `torch.cuda.is_available()` 是否为 `True`。如果这里是 `False`，应用会自动回退 CPU，上色会明显变慢。当前 1.0 Release 脚本只正式支持 NVIDIA CUDA 加速，AMD / Intel 显卡默认按 CPU 模式处理。
+
+已有环境用户可以先运行体检模式，确认脚本会识别到哪些环境，体检模式不会下载或安装任何东西：
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\setup_customer_environment.ps1 -PlanOnly
+```
 
 ## 项目地址
 
@@ -119,8 +127,8 @@ https://github.com/honsoncn-stack/Manga-Colorizer-/releases
 ## 主要功能
 
 - 本地书库：导入图片文件夹、PDF、CBZ。
-- 本地阅读器：单页阅读、页码跳转、缩放、黑白/彩色切换。
-- 自动上色：支持当前页、后续页、整本书上色。
+- 本地阅读器：双页阅读、页码跳转、缩放、黑白/彩色切换。
+- 自动上色：支持当前跨页、后续跨页、整本书上色。
 - 上色队列：查看当前任务、成功页、失败页和运行记录。
 - 图库预览：分页查看临时彩图和书库彩页。
 - PDF 导出：已上色页使用彩图，未上色页自动用黑白原图补齐。
@@ -188,7 +196,7 @@ desktop/release/
 2. 进入「书库」。
 3. 导入图片文件夹、PDF 或 CBZ。
 4. 点击「继续阅读」。
-5. 在「阅读器」里上色当前页、后续几页或整本书。
+5. 在「阅读器」里上色当前跨页、后续几组跨页或整本书。
 6. 点击「导出完整 PDF」。
 7. 在「图库」或书籍 `export` 目录中找到导出的 PDF。
 
@@ -202,10 +210,10 @@ library/books/<book_id>/export/colorized_book.pdf
 
 阅读器支持：
 
-- `ArrowRight` / `Space`: 下一页
-- `ArrowLeft`: 上一页
+- `ArrowRight` / `Space`: 下一跨页
+- `ArrowLeft`: 上一跨页
 - `B`: 切换黑白 / 彩色
-- `C`: 上色当前页
+- `C`: 上色当前跨页
 - 页码输入框里按 `Enter`: 跳转
 
 ## Bug 反馈

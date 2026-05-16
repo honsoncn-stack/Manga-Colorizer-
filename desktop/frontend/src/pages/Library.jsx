@@ -40,6 +40,7 @@ export default function Library({
   const [cbzPath, setCbzPath] = useState("");
   const [pendingDelete, setPendingDelete] = useState(null);
   const [busyMode, setBusyMode] = useState("");
+  const [exportingBookId, setExportingBookId] = useState("");
   const [sortMode, setSortMode] = useState("updated");
   const [searchText, setSearchText] = useState("");
   const [statusText, setStatusText] = useState("");
@@ -99,6 +100,29 @@ export default function Library({
       setStatusText(error instanceof Error ? error.message : "导入失败。");
     } finally {
       setBusyMode("");
+    }
+  };
+
+  const handleExportPdf = async (book) => {
+    if (!book?.book_id || exportingBookId) {
+      return;
+    }
+
+    setExportingBookId(book.book_id);
+    setStatusText(`正在导出《${book.title}》的完整 PDF...`);
+    try {
+      const result = await onExportPdf(book.book_id);
+      const totalPages = Number(result?.totalPages || book.total_pages || 0);
+      const colorPages = Number(result?.colorPages || 0);
+      const bwFallbackPages = Number(result?.bwFallbackPages || 0);
+      const detail = totalPages
+        ? `共 ${totalPages} 页，${colorPages} 页使用彩色结果，${bwFallbackPages} 页用黑白原图补齐。`
+        : "已生成完整 PDF。";
+      setStatusText(`《${book.title}》PDF 导出完成，已打开所在目录。${detail}`);
+    } catch (error) {
+      setStatusText(error instanceof Error ? error.message : "PDF 导出失败。");
+    } finally {
+      setExportingBookId("");
     }
   };
 
@@ -192,7 +216,13 @@ export default function Library({
                       <ActionButton variant="secondary" hint="批量上色整本书" onClick={() => onColorizeAll(book.book_id)}>
                         全书上色
                       </ActionButton>
-                      <ActionButton variant="ghost" hint="彩页优先，未上色页用黑白原图补齐" onClick={() => onExportPdf(book.book_id)}>
+                      <ActionButton
+                        variant="ghost"
+                        loading={exportingBookId === book.book_id}
+                        disabled={Boolean(exportingBookId && exportingBookId !== book.book_id)}
+                        hint={exportingBookId === book.book_id ? "正在生成 PDF 并准备打开目录" : "彩页优先，未上色页用黑白原图补齐"}
+                        onClick={() => handleExportPdf(book)}
+                      >
                         导出完整 PDF
                       </ActionButton>
                     </div>

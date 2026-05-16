@@ -60,7 +60,7 @@ export default function Settings({
       <div className="two-column-grid">
         <MangaCard title="阅读偏好" subtitle="这些设置保存在桌面端本地。">
           <div className="field-group">
-            <label className="field-label">阅读方向</label>
+            <label className="field-label">双页方向</label>
             <div className="button-row">
               <ActionButton
                 variant={readerSettings.readingDirection === "ltr" ? "secondary" : "ghost"}

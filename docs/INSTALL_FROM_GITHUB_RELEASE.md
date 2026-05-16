@@ -10,7 +10,7 @@
 - 建议有 D 盘，且至少 20 GB 可用空间。
 - 首次配置需要稳定网络。
 - 电脑需要 Conda；如果没有，下载 `Miniconda3-latest-Windows-x86_64.exe` 放到 `user-kit` 解压目录，脚本会自动安装。
-- CPU 可以运行；NVIDIA GPU 会更快，但不是必须。
+- CPU 可以运行；NVIDIA GPU 会更快，但需要 CUDA 版 PyTorch。当前 1.0 Release 脚本只正式支持 NVIDIA CUDA 加速，AMD / Intel 显卡默认走 CPU 模式。
 
 完整排查清单见 `SYSTEM_REQUIREMENTS.md` 或仓库里的 `docs/SYSTEM_REQUIREMENTS.md`。
 
@@ -36,15 +36,23 @@ cd D:\MangaAutoColorizerSetup
 powershell -ExecutionPolicy Bypass -File .\setup_customer_environment.ps1
 ```
 
+如果你已经有 Conda / Python / Torch 环境，建议先用体检模式看脚本会识别到什么。体检模式不会下载或安装任何东西：
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\setup_customer_environment.ps1 -PlanOnly
+```
+
 这个脚本可以重复运行。它会先检查已有环境，已经存在的 Conda、项目文件、模型仓库、模型权重和桌面程序会跳过，只补齐缺失的部分。
 
 脚本启动时会扫描 D 盘常见 Conda 环境，并询问是否复用已有 Conda/Python 环境。如果你已经在某个 D 盘环境里装好了 `torch` 和 `torchvision`，可以输入扫描列表里的数字，也可以直接粘贴该环境的 `python.exe` 路径或环境目录；直接回车则使用默认环境 `D:\CondaEnvs\manga-color-v2`。
 
-脚本会检查缺哪些包，尽量只安装缺失项。如果 `torch` 和 `torchvision` 已经能导入，会跳过 Torch 下载。已有环境用户建议先看：
+脚本会检查缺哪些包，尽量只安装缺失项。如果 `torch` 和 `torchvision` 已经能导入，脚本还会检查它是不是 CUDA 可用版本。NVIDIA 电脑如果检测到 CPU-only Torch，会提示是否重装 CUDA 版。已有环境用户建议先看：
 
 ```text
 docs/ENV_REUSE_GUIDE.md
 ```
+
+正式安装前，脚本会再显示一次安装计划确认。确认无误再继续；如果发现选错环境，输入 `n` 停止，不会继续下载。
 
 提示出现时也可以粘贴完整命令里的环境参数，例如：
 
@@ -76,7 +84,7 @@ powershell -ExecutionPolicy Bypass -File .\setup_customer_environment.ps1 -NonIn
 2. 准备 `D:\AIProjects\manga-auto-colorizer` 项目目录。
 3. 准备 `D:\CondaEnvs\manga-color-v2` 或你自己的 Conda 环境。
 4. 安装缺失的 Python 依赖。
-5. 如果 `torch` 和 `torchvision` 已经能导入，就不要重复安装 Torch。
+5. 如果 `torch` 和 `torchvision` 已经能导入，还要确认 `torch.cuda.is_available()` 是否为 `True`。如果是 `False`，说明当前仍是 CPU 上色。
 6. 把 `weights\generator.zip` 和 `weights\denoiser.pth` 放到指定模型目录。
 7. 再运行桌面安装包。
 
@@ -110,8 +118,8 @@ https://github.com/qweasdd/manga-colorization-v2
 ## 包含功能
 
 - 本地书库导入：图片文件夹、PDF、CBZ
-- 本地阅读器：翻页、缩放、黑白/彩色切换、快捷键
-- 自动上色：当前页、后续页、整本书
+- 本地阅读器：双页翻页、缩放、黑白/彩色切换、快捷键
+- 自动上色：当前跨页、后续跨页、整本书
 - 上色队列和运行记录
 - 分页图库预览
 - 完整 PDF 导出：已上色页使用彩图，未上色页用黑白原图补齐

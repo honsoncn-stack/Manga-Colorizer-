@@ -33,11 +33,11 @@ Each book card shows:
 ## Read pages
 
 1. In `Library`, click `继续阅读`.
-2. The `Reader` page opens the current page from the selected book.
+2. The `Reader` page opens the current spread from the selected book.
 3. If you enter `Reader` directly from the sidebar, the app automatically restores the most recently read book. If the library is empty, it prompts you to import a manga first.
 4. Use:
-   - `上一页`
-   - `下一页`
+   - `上一跨页`
+   - `下一跨页`
    - page jump input
    - BW / color toggle
    - zoom controls
@@ -46,16 +46,16 @@ Each book card shows:
 
 The reader supports:
 
-- `ArrowRight`: next page
-- `ArrowLeft`: previous page
-- `Space`: next page
+- `ArrowRight`: next spread
+- `ArrowLeft`: previous spread
+- `Space`: next spread
 - `B`: toggle BW / color
-- `C`: colorize current page
+- `C`: colorize current spread
 - `Enter` in the page input: jump to page
 
-## Colorize the current page
+## Colorize the current spread
 
-In `Reader`, click `上色当前页`.
+In `Reader`, click `上色当前跨页`.
 
 The public Release user kit includes authorized model weights. If setup was not
 completed or the weight files were moved, the button remains visible but the UI
@@ -65,7 +65,7 @@ clearly reports that the model is unavailable and colorization cannot start.
 
 In `Reader`, click:
 
-- `上色后 5 页`
+- `上色后 3 组跨页`
 - or `整本上色`
 
 Already colorized pages are skipped automatically. Whole-book colorization only

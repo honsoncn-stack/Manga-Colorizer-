@@ -13,12 +13,16 @@
 2. 把找到的环境列出来，并标明：
    - 应用依赖是否齐全
    - `torch` / `torchvision` 是否已经安装
+   - Torch 是 CUDA 可用版本，还是 CPU-only 版本
 3. 让你选择：
    - 输入数字：复用扫描到的环境
    - 粘贴路径：使用指定环境
    - 直接回车：使用或创建默认环境 `D:\CondaEnvs\manga-color-v2`
 4. 只安装缺失的 Python 包。
 5. 如果缺 Torch，会单独询问你是否安装，因为 Torch 体积较大。
+6. 如果电脑有 NVIDIA GPU，但已有 Torch 是 CPU-only 版本，脚本会询问是否重装 CUDA 版 Torch。
+
+当前 1.0 Release 脚本只正式支持 NVIDIA CUDA 加速。AMD / Intel 显卡用户可以正常安装和阅读，上色会默认走 CPU；ROCm / XPU / DirectML 这类非 NVIDIA GPU 后端后续可以作为 2.0 实验功能再做。
 
 ## 第 1 步：解压 Release 用户包
 
@@ -47,7 +51,15 @@ D:\MangaAutoColorizerSetup\weights\denoiser.pth
 & "D:\CondaEnvs\my-env\python.exe" -c "import torch, torchvision; print('torch', torch.__version__); print('torchvision', torchvision.__version__)"
 ```
 
-如果能输出版本号，说明这个环境已经有 Torch，不需要重复下载 Torch。
+如果能输出版本号，说明这个环境已经有 Torch，但还不能说明它一定会走 GPU。
+
+想确认是不是 CUDA / GPU 版，请运行：
+
+```powershell
+& "D:\CondaEnvs\my-env\python.exe" -c "import torch; print('torch', torch.__version__); print('torch.version.cuda', torch.version.cuda); print('cuda available', torch.cuda.is_available()); print(torch.cuda.get_device_name(0) if torch.cuda.is_available() else 'CPU')"
+```
+
+如果 `torch.version.cuda` 是 `None`，或者 `cuda available` 是 `False`，它就是 CPU-only 或 CUDA 不可用环境。能打开应用，但上色会慢。
 
 如果不知道环境在哪里，可以试：
 
@@ -66,6 +78,15 @@ D:\Anaconda3\envs\my-env
 
 ## 第 3 步：运行配置脚本
 
+如果你想先看看脚本会识别到哪些环境、准备复用什么，而不想立刻安装任何东西，可以先运行体检模式：
+
+```powershell
+cd D:\MangaAutoColorizerSetup
+powershell -ExecutionPolicy Bypass -File .\setup_customer_environment.ps1 -PlanOnly
+```
+
+`-PlanOnly` 只检查电脑，不下载、不安装、不改环境。确认列表里有你想复用的环境后，再运行正式安装命令。
+
 打开 PowerShell：
 
 ```powershell
@@ -78,14 +99,16 @@ powershell -ExecutionPolicy Bypass -File .\setup_customer_environment.ps1
 ```text
 ==> Choosing Python/Torch environment
 Detected environments:
-  [1] D:\CondaEnvs\manga-color-v2  -  ready: app deps + Torch
-  [2] D:\CondaEnvs\my-env          -  Torch ready; missing app deps: fastapi, fitz
+  [1] D:\CondaEnvs\manga-color-v2  -  ready: app deps + Torch CUDA ready: NVIDIA GeForce RTX ...
+  [2] D:\CondaEnvs\my-env          -  Torch CPU only; missing app deps: fastapi, fitz
 
 Type a number to reuse one of the environments above.
 Or paste a D: drive environment folder / python.exe path.
 Press Enter to use or create the default environment.
 Choose environment:
 ```
+
+选择环境和 Torch 方案后，脚本还会显示一次安装计划确认。看到计划没问题，再输入 `Y` 或直接回车继续；如果发现选错环境，输入 `n` 停止重来。
 
 ## 第 4 步：按你的情况选择
 
@@ -119,13 +142,21 @@ Install these missing app packages into this environment? [Y/n]
 
 这些包通常比 Torch 小很多，补装即可。
 
-如果提示 Torch 已经可用，脚本会显示：
+如果提示 Torch CUDA 已经可用，脚本会显示：
 
 ```text
-[OK] Torch and torchvision are already available. Torch download will be skipped.
+[OK] Torch CUDA is available. Torch download will be skipped.
 ```
 
-这时不会重复下载 Torch。
+这时不会重复下载 Torch，也会在上色时自动使用 GPU。
+
+如果你有 NVIDIA 显卡，但脚本显示已有 Torch 是 CPU-only，脚本会询问：
+
+```text
+Reinstall Torch with CUDA build now? This can download 1GB+ data. [Y/n]
+```
+
+想用 GPU 就输入 `Y` 或直接回车；想先保留 CPU 版就输入 `n`。
 
 ### 情况 C：我已经有环境，但列表没扫出来
 
@@ -159,13 +190,13 @@ n
 当脚本提示：
 
 ```text
-Install missing Torch packages automatically? This can download 1GB+ data. [Y/n]
+Install Torch for [G]PU CUDA / [C]PU only / [N]o? This can download 1GB+ data.
 ```
 
 输入：
 
 ```text
-n
+N
 ```
 
 这样可以先完成其他配置。应用可以打开和阅读，但自动上色可能不可用。之后你可以手动装 Torch，再重新运行脚本检查。
@@ -199,7 +230,8 @@ powershell -ExecutionPolicy Bypass -File .\setup_customer_environment.ps1 -Conda
 - 权重已经存在：跳过复制权重。
 - 桌面应用已经安装：跳过复制应用，只补桌面快捷方式。
 - Python 包已经能导入：跳过对应包安装。
-- `torch` 和 `torchvision` 已经能导入：跳过 Torch 安装。
+- `torch` 和 `torchvision` 已经能导入且 CUDA 可用：跳过 Torch 安装。
+- `torch` 和 `torchvision` 已经能导入但只有 CPU：如果电脑检测到 NVIDIA GPU，会询问是否重装 CUDA 版。
 
 ## 为什么脚本只接受 D 盘环境
 
@@ -237,9 +269,9 @@ https://pytorch.org/get-started/locally/
 
 ### 3. 我应该选 CPU 还是 GPU？
 
-不会折腾环境的新手可以先用 CPU。CPU 慢一些，但更容易装。
+如果电脑没有 NVIDIA 显卡，选 CPU。AMD / Intel 显卡在 1.0 Release 脚本里也按 CPU 处理。
 
-有 NVIDIA 显卡并且熟悉 CUDA 的用户，可以按 PyTorch 官方选择器安装对应 CUDA 版本。
+如果电脑有 NVIDIA 显卡，建议选 GPU / CUDA。脚本会优先使用 CUDA 版 Torch；如果安装失败，通常需要更新 NVIDIA 驱动，或按 PyTorch 官方选择器重新选择适合自己电脑的安装命令。
 
 ### 4. 脚本中途失败了，可以重跑吗？
 

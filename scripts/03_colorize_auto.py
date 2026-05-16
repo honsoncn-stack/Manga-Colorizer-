@@ -19,6 +19,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--size", type=int, default=768, help="Inference size, must be divisible by 32")
     parser.add_argument("--denoiser-sigma", type=int, default=18, help="Denoiser sigma when denoise is enabled")
     parser.add_argument("--no-denoise", action="store_true", help="Disable upstream denoising step")
+    parser.add_argument(
+        "--device",
+        choices=("auto", "cpu", "cuda"),
+        default="auto",
+        help="Inference device. auto uses CUDA when torch.cuda is available.",
+    )
     return parser.parse_args()
 
 
@@ -55,6 +61,27 @@ def copy_generated_images(input_path: Path, out_dir: Path, started_at: float) ->
         copied += 1
         print(f"[OK] Copied generated image to {target}")
     return copied
+
+
+def should_use_gpu(device: str) -> bool:
+    if device == "cpu":
+        return False
+
+    try:
+        import torch
+    except Exception as exc:
+        if device == "cuda":
+            raise RuntimeError(f"CUDA was requested, but torch could not be imported: {exc}") from exc
+        print(f"[WARN] torch import failed, falling back to CPU: {exc}")
+        return False
+
+    cuda_available = bool(torch.cuda.is_available())
+    if device == "cuda" and not cuda_available:
+        raise RuntimeError(
+            "CUDA was requested, but torch.cuda.is_available() returned False. "
+            "Install a CUDA-enabled PyTorch build or use --device cpu."
+        )
+    return cuda_available
 
 
 def main() -> int:
@@ -94,6 +121,11 @@ def main() -> int:
         "-ds",
         str(args.denoiser_sigma),
     ]
+    if should_use_gpu(args.device):
+        command.append("--gpu")
+        print("[OK] Inference device: cuda")
+    else:
+        print("[OK] Inference device: cpu")
     if args.no_denoise:
         command.append("-nd")
     print(f"[OK] Running: {' '.join(command)}")
